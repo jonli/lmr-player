@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>LMR player</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#p{position:absolute;inset:0;width:100%;height:100%}</style>
+</head>
+<body>
+<div id="p"></div>
+<script>
+// Last Match Recap: plays one YouTube clip with YouTube's own player, from a real web page so
+// YouTube can verify where it is embedded. Usage: ?v=VIDEO_ID&autoplay=1
+var q = new URLSearchParams(location.search), vid = q.get('v') || '', auto = q.get('autoplay') === '1', player;
+function send(t, d) { try { LMR.onEvent(t, d == null ? '' : String(d)); } catch (e) {} }
+window.onYouTubeIframeAPIReady = function () {
+  player = new YT.Player('p', {
+    videoId: vid,
+    playerVars: { controls: 1, fs: 1, rel: 0, iv_load_policy: 3, playsinline: 1, autoplay: auto ? 1 : 0 },
+    events: {
+      onReady: function () { send('ready'); if (auto) { player.unMute(); player.playVideo(); } },
+      onStateChange: function (e) { send('state', e.data); },
+      onError: function (e) { send('error', e.data); }
+    }
+  });
+};
+window.lmr = {
+  play: function () { if (player && player.playVideo) { player.unMute(); player.playVideo(); } },
+  pause: function () { if (player && player.pauseVideo) player.pauseVideo(); },
+  restart: function () { if (player && player.seekTo) { player.seekTo(0, true); player.playVideo(); } }
+};
+var s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(s);
+</script>
+</body>
+</html>
