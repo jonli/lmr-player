@@ -12,7 +12,7 @@
   /* Layout: sticky filter bar, grid of 10 muted autoplaying clips, sticky save bar at the bottom */
   :root{
     --bg:#0d1210; --panel:#151c19; --panel2:#1c2521; --line:#26312c;
-    --text:#eef3f0; --muted:#8fa199; --accent:#b8f34a; --accent-ink:#13200a;
+    --text:#eef3f0; --muted:#8fa199; --accent:#b8f34a; --accent-ink:#13200a; --accent-bg:#22301b;
     --red:#ff6b5e; --red-bg:#3a1916; --red-line:#5a2a25; --amber:#ffc65c;
     color-scheme:dark;
   }
@@ -32,6 +32,15 @@
   .status{color:var(--muted);font-size:14px;margin:0 0 12px;min-height:18px}
   .err{color:var(--amber)}
 
+  .rules{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 14px;display:flex;flex-direction:column;gap:8px}
+  .rules h2{font-size:15px;margin:0}
+  .rules p{margin:0;color:var(--muted);font-size:13px}
+  .rule{display:flex;gap:10px;align-items:center;font-size:14px;flex-wrap:wrap}
+  .rule .pill{font:600 12px Inter,sans-serif;border-radius:6px;padding:2px 8px}
+  .pill.approve{background:var(--accent-bg);color:var(--accent)}
+  .pill.reject{background:var(--red-bg);color:var(--red)}
+  .rule button{margin-left:auto;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;padding:4px 10px;font:500 12px Inter,sans-serif;cursor:pointer}
+
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
   .tile{background:var(--panel);border:2px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s}
   .tile.rej{border-color:var(--red)}
@@ -48,10 +57,18 @@
   .tag{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:5px;padding:2px 6px}
   .tag.official{color:#7fd6ff;border-color:#21465a}
   .tag.portrait{color:var(--accent);border-color:#3c5420}
-  .toggle{margin:10px 12px 12px;border:0;border-radius:10px;padding:11px;font:600 14px Inter,sans-serif;cursor:pointer;background:#22301b;color:var(--accent);display:flex;align-items:center;justify-content:center;gap:8px}
+  .tag.ch{color:var(--text)}
+  .actions{display:flex;gap:8px;margin:10px 12px 12px}
+  .toggle{flex:1;border:0;border-radius:10px;padding:11px;font:600 14px Inter,sans-serif;cursor:pointer;background:var(--accent-bg);color:var(--accent)}
   .tile.rej .toggle{background:var(--red-bg);color:var(--red)}
+  .always{flex:0 0 auto;border:1px dashed #3c5420;background:transparent;color:var(--accent);border-radius:10px;padding:8px 10px;font:600 12px/1.2 Inter,sans-serif;cursor:pointer;text-align:center}
+  .tile.rej .always{border-color:var(--red-line);color:var(--red)}
+  .always[aria-pressed="true"]{border-style:solid;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .tile.rej .always[aria-pressed="true"]{background:var(--red);color:#2a0b08;border-color:var(--red)}
+  .always small{display:block;font-weight:500;opacity:.8}
+  .note{margin:-4px 12px 12px;font-size:12px;color:var(--muted)}
   .reasons{display:none;flex-wrap:wrap;gap:6px;padding:0 12px 12px;margin-top:-4px}
-  .tile.rej .reasons{display:flex}
+  .tile.rej .reasons.show{display:flex}
   .reason{border:1px solid var(--red-line);background:transparent;color:var(--red);border-radius:999px;padding:5px 10px;font:500 12px Inter,sans-serif;cursor:pointer}
   .reason[aria-pressed="true"]{background:var(--red);color:#2a0b08;border-color:var(--red)}
 
@@ -98,11 +115,13 @@
       <button class="chip" data-fmt="landscape" aria-pressed="false">Landscape</button>
       <button class="chip" data-fmt="vertical" aria-pressed="false">Portrait</button>
       <button class="chip" id="skip" aria-pressed="false" title="Start each clip 20 seconds in">Skip intros</button>
+      <button class="chip" id="rulesBtn" aria-pressed="false">Channel rules</button>
       <button class="chip" id="refresh">Refresh</button>
       <button class="chip" id="signout">Forget PIN</button>
     </div>
   </header>
-  <p class="help">Every clip is approved unless you flag it. Tap a clip's bar, or press <kbd>1</kbd>–<kbd>0</kbd>, to reject it. Press <kbd>Enter</kbd> to save the batch and load the next 10. Clips that won't play outside YouTube are flagged for you.</p>
+  <p class="help">Every clip is approved unless you flag it. Tap a clip's bar, or press <kbd>1</kbd>–<kbd>0</kbd>, to reject it. <b>Always</b> (or <kbd>Shift</kbd>+number) makes the same call for every clip from that channel, now and in future. Press <kbd>Enter</kbd> to save the batch.</p>
+  <section class="rules" id="rulesPanel" hidden></section>
   <div class="status" id="status"></div>
   <div class="grid" id="grid"></div>
 </div>
@@ -121,7 +140,7 @@
 const SB_URL = "https://vpvsqfbhaigxnkqydnqc.supabase.co";
 const SB_KEY = "sb_publishable_EZ32-EmLYlETo-DwG7N3EQ_p-DS3m8c"; // public key, same as the app
 const BATCH = 10, SKIP_SEC = 20;
-const REASONS = ["Wrong match", "Not official", "Not highlights", "Poor quality", "Other"];
+const REASONS = ["Bad clip", "Wrong match"];          // Bad clip: never suggest again. Wrong match: off this match only.
 const EMBED_REASON = "Owner blocks embedding";
 
 const $ = s => document.querySelector(s);
@@ -129,8 +148,11 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
                 set(k,v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k,v); } catch(e){} } };
 
-let pin = store.get("lmr_review_pin"), clips = [], batch = [], fmt = "all", skip = store.get("lmr_review_skip") === "1";
+let pin = store.get("lmr_review_pin"), clips = [], savedRules = [], batch = [], fmt = "all", skip = store.get("lmr_review_skip") === "1";
+let rules = new Map();   // channel key -> { rule, owner (batch index) } for this batch
 let players = [], ytReady = false, ytQueue = [], lastSaved = null, toastTimer = null, saving = false;
+
+const chKey = c => c.channel_id ? (c.source || "youtube") + ":" + c.channel_id : null;
 
 async function rpc(fn, args){
   const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
@@ -158,10 +180,10 @@ function showPin(msg){
   $("#app").hidden = true; $("#savebar").hidden = true; $("#pinForm").hidden = false;
   $("#pinErr").textContent = msg || ""; $("#pin").value = ""; $("#pin").focus();
 }
-$("#pinForm").addEventListener("submit", e => {
-  e.preventDefault(); pin = $("#pin").value.trim(); start();
-});
+$("#pinForm").addEventListener("submit", e => { e.preventDefault(); pin = $("#pin").value.trim(); start(); });
 $("#signout").addEventListener("click", () => { store.set("lmr_review_pin", null); pin = null; destroyPlayers(); showPin(); });
+
+function takeList(j){ clips = j.clips || []; savedRules = j.rules || []; renderRules(); }
 
 async function start(){
   if (!pin) return showPin();
@@ -170,22 +192,62 @@ async function start(){
     const j = await rpc("review_list");
     store.set("lmr_review_pin", pin);
     $("#pinForm").hidden = true; $("#app").hidden = false; $("#savebar").hidden = false;
-    clips = j.clips || []; nextBatch();
+    takeList(j); nextBatch();
   } catch(e){
     if (e.pin) { store.set("lmr_review_pin", null); showPin(e.message); }
     else showPin("Couldn't reach Supabase: " + e.message);
   }
 }
 
+/* ---------- channel rules panel ---------- */
+function renderRules(){
+  $("#rulesBtn").textContent = savedRules.length ? `Channel rules (${savedRules.length})` : "Channel rules";
+  const p = $("#rulesPanel");
+  p.innerHTML = `<h2>Channel rules</h2>` + (savedRules.length
+    ? `<p>Henry applies these to every new clip from the channel. Remove one to start reviewing that channel again.</p>` +
+      savedRules.map(r => `<div class="rule"><span class="pill ${r.rule}">${r.rule === "approve" ? "Always approve" : "Always reject"}</span>
+        <span>${esc(r.channel_title || r.channel_id)}</span>
+        <button type="button" data-src="${esc(r.source)}" data-ch="${esc(r.channel_id)}">Remove</button></div>`).join("")
+    : `<p>No rules yet. Tap <b>Always</b> on a clip to approve or reject everything from its channel.</p>`);
+}
+$("#rulesBtn").addEventListener("click", () => {
+  const p = $("#rulesPanel"); p.hidden = !p.hidden; $("#rulesBtn").setAttribute("aria-pressed", !p.hidden);
+});
+$("#rulesPanel").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-ch]"); if (!b) return;
+  b.disabled = true;
+  try {
+    await rpc("review_rule_delete", { p_source: b.dataset.src, p_channel_id: b.dataset.ch });
+    savedRules = savedRules.filter(r => !(r.source === b.dataset.src && r.channel_id === b.dataset.ch));
+    renderRules(); setStatus("Rule removed. New clips from that channel will come to you again.");
+  } catch(err){ b.disabled = false; setStatus("Couldn't remove that rule: " + err.message, true); }
+});
+
 /* ---------- batches ---------- */
 function filtered(){ return clips.filter(c => fmt === "all" || c.format === fmt); }
 
 function nextBatch(){
   destroyPlayers();
+  rules = new Map();
   const pool = filtered();
   batch = pool.slice(0, BATCH).map(c => ({ clip: c, reject: false, reason: REASONS[0], broken: null }));
   $("#left").textContent = pool.length ? `${pool.length} waiting` : "";
   render();
+}
+
+// what will actually be saved for tile i
+function effective(i){
+  const b = batch[i], r = rules.get(chKey(b.clip));
+  if (b.broken) return { reject: true, reason: b.reason, rule: r, follows: false };
+  if (r && r.owner !== i) return { reject: r.rule === "reject", reason: "Channel rejected", rule: r, follows: true };
+  if (r) return { reject: r.rule === "reject", reason: r.rule === "reject" ? "Channel rejected" : null, rule: r, follows: false };
+  return { reject: b.reject, reason: b.reason, rule: null, follows: false };
+}
+
+function othersWaiting(c){
+  const k = chKey(c); if (!k) return 0;
+  const inBatch = new Set(batch.map(b => b.clip.id));
+  return clips.filter(x => chKey(x) === k && !inBatch.has(x.id)).length;
 }
 
 function render(){
@@ -203,16 +265,20 @@ function render(){
           <span>${esc(dateStr(c.played_on))}</span></div>
         <p class="title" title="${esc(c.title)}">${esc(c.title)}</p>
         <div class="meta">
+          ${c.channel_title ? `<span class="tag ch">${esc(c.channel_title)}</span>` : ""}
+          ${c.likely_official ? `<span class="tag official">Looks Official</span>` : ""}
           ${c.competition ? `<span class="tag">${esc(c.competition)}</span>` : ""}
           ${c.format === "vertical" ? `<span class="tag portrait">Portrait</span>` : ""}
           ${c.source === "dailymotion" ? `<span class="tag">Dailymotion</span>` : ""}
-          ${c.channel_title ? `<span class="tag">${esc(c.channel_title)}</span>` : ""}
-          ${c.likely_official ? `<span class="tag official">Looks Official</span>` : ""}
           ${c.duration_sec ? `<span class="tag">${dur(c.duration_sec)}</span>` : ""}
         </div>
       </div>
-      <button class="toggle" data-act="toggle" type="button"></button>
-      <div class="reasons">${[...REASONS, EMBED_REASON].map(r => `<button class="reason" type="button" data-reason="${esc(r)}">${esc(r)}</button>`).join("")}</div>
+      <div class="actions">
+        <button class="toggle" data-act="toggle" type="button"></button>
+        ${chKey(c) ? `<button class="always" data-act="always" type="button"></button>` : ""}
+      </div>
+      <p class="note" hidden></p>
+      <div class="reasons">${[...REASONS, EMBED_REASON, "No longer available"].map(r => `<button class="reason" type="button" data-reason="${esc(r)}">${esc(r)}</button>`).join("")}</div>
     </article>`; }).join("");
   batch.forEach((b, i) => { paintTile(i); mountPlayer(i); });
   updateTally();
@@ -220,45 +286,83 @@ function render(){
 
 function paintTile(i){
   const b = batch[i], el = document.querySelector(`.tile[data-i="${i}"]`); if (!el) return;
-  el.classList.toggle("rej", b.reject);
-  el.querySelector(".toggle").innerHTML = b.reject ? "✕ Reject" : "✓ Approve";
+  const ef = effective(i);
+  el.classList.toggle("rej", ef.reject);
+  el.querySelector(".toggle").textContent = ef.reject ? "✕ Reject" : "✓ Approve";
+
+  const al = el.querySelector(".always");
+  if (al){
+    const n = othersWaiting(b.clip), owner = ef.rule && !ef.follows;
+    al.setAttribute("aria-pressed", !!owner);
+    al.innerHTML = `Always ${ef.reject ? "reject" : "approve"}<small>${n ? `channel · +${n} waiting` : "this channel"}</small>`;
+    al.title = `${ef.reject ? "Reject" : "Approve"} every clip from ${b.clip.channel_title || "this channel"}, now and in future`;
+    al.hidden = !!b.broken || ef.follows;
+  }
+  const note = el.querySelector(".note");
+  note.hidden = !ef.follows;
+  if (ef.follows) note.textContent = `Following your rule for ${b.clip.channel_title}. Tap the bar to decide this one yourself.`;
+
+  const showReasons = ef.reject && !ef.rule && !ef.follows;
+  el.querySelector(".reasons").classList.toggle("show", showReasons || !!b.broken);
   el.querySelectorAll(".reason").forEach(r => {
+    const auto = r.dataset.reason === EMBED_REASON || r.dataset.reason === "No longer available";
+    r.hidden = b.broken ? r.dataset.reason !== b.reason : auto;
     r.setAttribute("aria-pressed", r.dataset.reason === b.reason);
-    if (r.dataset.reason === EMBED_REASON) r.hidden = b.reason !== EMBED_REASON;
   });
   const vid = el.querySelector(".vid"), old = vid.querySelector(".broken");
   if (b.broken && !old) vid.insertAdjacentHTML("beforeend", `<div class="broken">${esc(b.broken)}</div>`);
 }
+function paintChannel(k){ batch.forEach((b, j) => { if (chKey(b.clip) === k) paintTile(j); }); updateTally(); }
 
 function updateTally(){
-  const rej = batch.filter(b => b.reject).length, app = batch.length - rej;
-  $("#tally").innerHTML = batch.length ? `<b class="a">${app}</b> approve · <b class="r">${rej}</b> reject` : "";
-  $("#save").textContent = batch.length ? `Save batch` : "Save batch";
+  let rej = 0; batch.forEach((b, i) => { if (effective(i).reject) rej++; });
+  const app = batch.length - rej, nRules = rules.size;
+  let more = 0;
+  rules.forEach((r, k) => { const owner = batch[r.owner]; if (owner) more += othersWaiting(owner.clip); });
+  $("#tally").innerHTML = batch.length
+    ? `<b class="a">${app}</b> approve · <b class="r">${rej}</b> reject` + (nRules ? ` · ${nRules} channel rule${nRules > 1 ? "s" : ""}${more ? ` (+${more} waiting)` : ""}` : "")
+    : "";
   $("#save").disabled = !batch.length || saving;
+  if (!saving) $("#save").textContent = "Save batch";
   $("#allRej").hidden = !batch.length;
 }
 
 function toggle(i){
-  const b = batch[i]; if (!b) return;
-  b.reject = !b.reject;
-  if (b.reject && !b.reason) b.reason = REASONS[0];
-  paintTile(i); updateTally();
+  const b = batch[i]; if (!b || b.broken) return;
+  const k = chKey(b.clip), r = rules.get(k);
+  if (r && r.owner === i){ r.rule = r.rule === "approve" ? "reject" : "approve"; b.reject = r.rule === "reject"; paintChannel(k); return; }
+  if (r){ // decide this one yourself: the rule stops applying to the batch
+    const now = effective(i).reject; rules.delete(k); b.reject = !now; paintChannel(k); return;
+  }
+  b.reject = !b.reject; paintTile(i); updateTally();
+}
+
+function setAlways(i){
+  const b = batch[i]; if (!b || b.broken) return;
+  const k = chKey(b.clip); if (!k) return;
+  const r = rules.get(k);
+  if (r && r.owner === i) rules.delete(k);
+  else rules.set(k, { rule: effective(i).reject ? "reject" : "approve", owner: i });
+  paintChannel(k);
 }
 
 $("#grid").addEventListener("click", e => {
   const tile = e.target.closest(".tile"); if (!tile) return;
   const i = Number(tile.dataset.i);
   if (e.target.closest("[data-act=toggle]")) toggle(i);
+  else if (e.target.closest("[data-act=always]")) setAlways(i);
   else if (e.target.dataset.reason){ batch[i].reason = e.target.dataset.reason; paintTile(i); }
 });
 $("#allRej").addEventListener("click", () => {
-  const all = batch.every(b => b.reject);
-  batch.forEach((b, i) => { b.reject = !all; paintTile(i); }); updateTally();
+  const all = batch.every((b, i) => effective(i).reject);
+  rules = new Map();
+  batch.forEach((b, i) => { if (!b.broken) b.reject = !all; paintTile(i); }); updateTally();
 });
 
 document.addEventListener("keydown", e => {
   if ($("#app").hidden || e.target.tagName === "INPUT" || e.ctrlKey || e.metaKey || e.altKey) return;
-  if (/^[0-9]$/.test(e.key)){ toggle(e.key === "0" ? 9 : Number(e.key) - 1); e.preventDefault(); }
+  const m = /^Digit([0-9])$/.exec(e.code) || /^Numpad([0-9])$/.exec(e.code);
+  if (m){ const i = m[1] === "0" ? 9 : Number(m[1]) - 1; e.shiftKey ? setAlways(i) : toggle(i); e.preventDefault(); }
   else if (e.key === "Enter"){ save(); e.preventDefault(); }
 });
 
@@ -266,16 +370,27 @@ document.addEventListener("keydown", e => {
 async function save(){
   if (saving || !batch.length) return;
   saving = true; updateTally(); $("#save").textContent = "Saving…";
-  const approve = batch.filter(b => !b.reject).map(b => b.clip.id);
-  const reject = batch.filter(b => b.reject).map(b => ({ id: b.clip.id, reason: b.reason || "Other" }));
+  const approve = [], reject = [];
+  batch.forEach((b, i) => { const ef = effective(i); if (ef.reject) reject.push({ id: b.clip.id, reason: ef.reason || "Bad clip" }); else approve.push(b.clip.id); });
+  const ruleList = [];
+  rules.forEach((r, k) => { const c = batch[r.owner].clip; ruleList.push({ source: c.source || "youtube", channel_id: c.channel_id, channel_title: c.channel_title, rule: r.rule }); });
   try {
-    const j = await rpc("review_save", { p_approve: approve, p_reject: reject });
-    const ids = batch.map(b => b.clip.id);
-    lastSaved = { ids, clips: batch.map(b => b.clip) };
+    const j = await rpc("review_save", { p_approve: approve, p_reject: reject, p_rules: ruleList });
+    const ruleIds = j.rule_ids || [];
+    const ids = batch.map(b => b.clip.id).concat(ruleIds);
+    lastSaved = { ids, rules: ruleList };
     clips = clips.filter(c => !ids.includes(c.id));
+    ruleList.forEach(r => { savedRules = savedRules.filter(s => !(s.source === r.source && s.channel_id === r.channel_id)); savedRules.unshift(r); });
+    renderRules();
     saving = false;
-    showToast(`Saved: ${j.approved} approved, ${j.rejected} rejected.`);
-    setStatus("");
+    let msg = `Saved: ${j.approved} approved, ${j.rejected} rejected.`;
+    if (j.rule_approved || j.rule_rejected){
+      const parts = [];
+      if (j.rule_approved) parts.push(`${j.rule_approved} more approved`);
+      if (j.rule_rejected) parts.push(`${j.rule_rejected} more rejected`);
+      msg += ` Channel rules: ${parts.join(", ")}.`;
+    }
+    showToast(msg); setStatus("");
     nextBatch(); window.scrollTo({ top: 0 });
   } catch(e){
     saving = false; updateTally();
@@ -288,15 +403,15 @@ $("#save").addEventListener("click", save);
 function showToast(text){
   $("#toastText").textContent = text; $("#toast").classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { $("#toast").classList.remove("show"); lastSaved = null; }, 8000);
+  toastTimer = setTimeout(() => { $("#toast").classList.remove("show"); lastSaved = null; }, 10000);
 }
 $("#undo").addEventListener("click", async () => {
   if (!lastSaved) return;
-  const { ids } = lastSaved; lastSaved = null; $("#toast").classList.remove("show");
+  const { ids, rules: rl } = lastSaved; lastSaved = null; $("#toast").classList.remove("show");
   try {
-    await rpc("review_undo", { p_ids: ids });
-    const j = await rpc("review_list"); clips = j.clips || []; nextBatch();
-    setStatus("Batch put back in the queue.");
+    await rpc("review_undo", { p_ids: ids, p_rules: rl.map(r => ({ source: r.source, channel_id: r.channel_id })) });
+    takeList(await rpc("review_list")); nextBatch();
+    setStatus("Batch put back in the queue" + (rl.length ? ", and its channel rules removed." : "."));
   } catch(e){ setStatus("Couldn't undo that batch: " + e.message, true); }
 });
 
@@ -311,7 +426,7 @@ $("#skip").addEventListener("click", () => {
 });
 $("#refresh").addEventListener("click", async () => {
   setStatus("Refreshing…");
-  try { const j = await rpc("review_list"); clips = j.clips || []; setStatus(""); nextBatch(); }
+  try { takeList(await rpc("review_list")); setStatus(""); nextBatch(); }
   catch(e){ if (e.pin) { store.set("lmr_review_pin", null); return showPin(e.message); } setStatus("Couldn't refresh: " + e.message, true); }
 });
 
@@ -319,9 +434,12 @@ $("#refresh").addEventListener("click", async () => {
 function markBroken(i, code){
   const b = batch[i]; if (!b) return;
   if (code === 150 || code === 101){ b.broken = "Won't play outside YouTube (owner blocks embedding)"; b.reason = EMBED_REASON; }
-  else if (code === 100){ b.broken = "Video removed or private"; b.reason = "Other"; }
-  else { b.broken = "Video won't load (error " + code + ")"; b.reason = "Other"; }
-  b.reject = true; paintTile(i); updateTally();
+  else if (code === 100){ b.broken = "Video removed or private"; b.reason = "No longer available"; }
+  else { b.broken = "Video won't load (error " + code + ")"; b.reason = "Bad clip"; }
+  b.reject = true;
+  const r = rules.get(chKey(b.clip)); if (r && r.owner === i) rules.delete(chKey(b.clip));
+  paintChannel(chKey(b.clip) || "");
+  paintTile(i); updateTally();
 }
 
 function mountPlayer(i){
@@ -333,10 +451,9 @@ function mountPlayer(i){
     $("#p" + i).replaceWith(f); players[i] = null; return;
   }
   if (!ytReady){ ytQueue.push(i); return; }
-  const startAt = skip ? SKIP_SEC : 0;
   players[i] = new YT.Player("p" + i, {
     videoId: c.youtube_id,
-    playerVars: { autoplay: 1, mute: 1, controls: 1, rel: 0, iv_load_policy: 3, playsinline: 1, start: startAt },
+    playerVars: { autoplay: 1, mute: 1, controls: 1, rel: 0, iv_load_policy: 3, playsinline: 1, start: skip ? SKIP_SEC : 0 },
     events: {
       onReady: e => { e.target.mute(); e.target.playVideo(); },
       onStateChange: e => { if (e.data === 0) { e.target.seekTo(skip ? SKIP_SEC : 0, true); e.target.playVideo(); } },
