@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="noindex,nofollow">
+<title>LMR Clip Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout: sticky filter bar, grid of 10 muted autoplaying clips, sticky save bar at the bottom */
+  :root{
+    --bg:#0d1210; --panel:#151c19; --panel2:#1c2521; --line:#26312c;
+    --text:#eef3f0; --muted:#8fa199; --accent:#b8f34a; --accent-ink:#13200a;
+    --red:#ff6b5e; --red-bg:#3a1916; --red-line:#5a2a25; --amber:#ffc65c;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+  button{font-family:inherit}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .wrap{max-width:1600px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right)) 120px max(16px,env(safe-area-inset-left))}
+  header{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;margin-bottom:12px}
+  header h1{font-size:22px;margin:0;font-weight:700;letter-spacing:-.01em}
+  .left{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+  .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-left:auto}
+  .chip{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:999px;padding:7px 13px;font:500 13px Inter,sans-serif;cursor:pointer}
+  .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .help{color:var(--muted);font-size:13px;margin:0 0 14px;line-height:1.5}
+  kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:0 5px;font:600 12px Inter,sans-serif;color:var(--text)}
+  .status{color:var(--muted);font-size:14px;margin:0 0 12px;min-height:18px}
+  .err{color:var(--amber)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+  .tile{background:var(--panel);border:2px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s}
+  .tile.rej{border-color:var(--red)}
+  .vid{position:relative;aspect-ratio:16/9;max-width:100%;background:#000}
+  .vid > div,.vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .num{position:absolute;top:8px;left:8px;z-index:2;background:rgba(0,0,0,.7);color:#fff;font:700 13px Inter,sans-serif;border-radius:6px;padding:2px 8px;pointer-events:none}
+  .broken{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;background:rgba(40,12,10,.92);color:var(--red);font-weight:600;font-size:14px;line-height:1.4}
+  .info{padding:10px 12px 0;display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+  .match{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+  .match strong{color:var(--text);font-weight:600;font-size:14px}
+  .score{background:var(--panel2);border-radius:5px;padding:1px 6px;color:var(--text);font-weight:600}
+  .title{font-size:13px;line-height:1.35;margin:0;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .meta{display:flex;flex-wrap:wrap;gap:5px;font-size:11px}
+  .tag{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:5px;padding:2px 6px}
+  .tag.official{color:#7fd6ff;border-color:#21465a}
+  .tag.portrait{color:var(--accent);border-color:#3c5420}
+  .toggle{margin:10px 12px 12px;border:0;border-radius:10px;padding:11px;font:600 14px Inter,sans-serif;cursor:pointer;background:#22301b;color:var(--accent);display:flex;align-items:center;justify-content:center;gap:8px}
+  .tile.rej .toggle{background:var(--red-bg);color:var(--red)}
+  .reasons{display:none;flex-wrap:wrap;gap:6px;padding:0 12px 12px;margin-top:-4px}
+  .tile.rej .reasons{display:flex}
+  .reason{border:1px solid var(--red-line);background:transparent;color:var(--red);border-radius:999px;padding:5px 10px;font:500 12px Inter,sans-serif;cursor:pointer}
+  .reason[aria-pressed="true"]{background:var(--red);color:#2a0b08;border-color:var(--red)}
+
+  .savebar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(13,18,16,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);
+    padding:12px max(16px,env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+  .savebar .in{max-width:1600px;margin:0 auto;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .tally{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .tally b.a{color:var(--accent)} .tally b.r{color:var(--red)}
+  .save{margin-left:auto;border:0;border-radius:12px;padding:13px 22px;font:700 15px Inter,sans-serif;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+  .save:disabled{opacity:.5;cursor:default}
+  .ghost{border:1px solid var(--line);background:transparent;color:var(--text);border-radius:12px;padding:12px 16px;font:600 14px Inter,sans-serif;cursor:pointer}
+
+  .pinbox{max-width:360px;margin:12vh auto 0;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px}
+  .pinbox h1{margin:0;font-size:20px}
+  .pinbox p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+  .pinbox input{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px;font:600 20px Inter,sans-serif;letter-spacing:.2em;text-align:center}
+  .empty{text-align:center;padding:48px 16px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:16px}
+  .empty b{display:block;color:var(--text);font-size:18px;margin-bottom:6px}
+
+  .toast{position:fixed;left:50%;bottom:90px;z-index:30;transform:translateX(-50%) translateY(200px);background:#222c27;border:1px solid var(--line);color:var(--text);padding:12px 12px 12px 16px;border-radius:14px;display:flex;gap:14px;align-items:center;font-size:14px;transition:transform .25s;box-shadow:0 10px 30px rgba(0,0,0,.4);max-width:calc(100% - 32px)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast button{background:transparent;border:1px solid var(--line);color:var(--accent);border-radius:10px;padding:6px 12px;font:600 14px Inter,sans-serif;cursor:pointer}
+  [hidden]{display:none!important}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media (max-width:560px){ .bar{margin-left:0} .save{flex:1 1 100%} }
+</style>
+</head>
+<body>
+
+<form class="pinbox" id="pinForm" hidden>
+  <h1>Clip Review</h1>
+  <p>Enter your review PIN. This browser will remember it.</p>
+  <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" aria-label="Review PIN" required>
+  <button class="save" type="submit" style="margin:0">Open</button>
+  <p class="err" id="pinErr"></p>
+</form>
+
+<div class="wrap" id="app" hidden>
+  <header>
+    <h1>Clip Review</h1>
+    <span class="left" id="left"></span>
+    <div class="bar">
+      <button class="chip" data-fmt="all" aria-pressed="true">All</button>
+      <button class="chip" data-fmt="landscape" aria-pressed="false">Landscape</button>
+      <button class="chip" data-fmt="vertical" aria-pressed="false">Portrait</button>
+      <button class="chip" id="skip" aria-pressed="false" title="Start each clip 20 seconds in">Skip intros</button>
+      <button class="chip" id="refresh">Refresh</button>
+      <button class="chip" id="signout">Forget PIN</button>
+    </div>
+  </header>
+  <p class="help">Every clip is approved unless you flag it. Tap a clip's bar, or press <kbd>1</kbd>–<kbd>0</kbd>, to reject it. Press <kbd>Enter</kbd> to save the batch and load the next 10. Clips that won't play outside YouTube are flagged for you.</p>
+  <div class="status" id="status"></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="savebar" id="savebar" hidden>
+  <div class="in">
+    <span class="tally" id="tally"></span>
+    <button class="ghost" id="allRej" type="button">Reject all</button>
+    <button class="save" id="save" type="button">Save batch</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toastText"></span><button id="undo" type="button">Undo</button></div>
+
+<script>
+const SB_URL = "https://vpvsqfbhaigxnkqydnqc.supabase.co";
+const SB_KEY = "sb_publishable_EZ32-EmLYlETo-DwG7N3EQ_p-DS3m8c"; // public key, same as the app
+const BATCH = 10, SKIP_SEC = 20;
+const REASONS = ["Wrong match", "Not official", "Not highlights", "Poor quality", "Other"];
+const EMBED_REASON = "Owner blocks embedding";
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+                set(k,v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k,v); } catch(e){} } };
+
+let pin = store.get("lmr_review_pin"), clips = [], batch = [], fmt = "all", skip = store.get("lmr_review_skip") === "1";
+let players = [], ytReady = false, ytQueue = [], lastSaved = null, toastTimer = null, saving = false;
+
+async function rpc(fn, args){
+  const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST", headers: { apikey: SB_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(Object.assign({ p_pin: pin }, args || {}))
+  });
+  if (!r.ok) throw new Error("Supabase said " + r.status);
+  const j = await r.json();
+  if (!j.ok) { const e = new Error(j.error || "Something went wrong"); e.pin = /PIN/.test(j.error || ""); throw e; }
+  return j;
+}
+
+function setStatus(msg, isErr){ const el = $("#status"); el.textContent = msg || ""; el.classList.toggle("err", !!isErr); }
+function dur(s){ if (!s && s !== 0) return ""; return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); }
+function dateStr(d){ try { return new Date(d+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); } catch(e){ return d; } }
+function scoreStr(c){
+  if (c.home_score == null) return "";
+  let s = c.home_score + "–" + c.away_score;
+  if (c.home_pens != null) s += " (" + c.home_pens + "–" + c.away_pens + " pens)";
+  return s;
+}
+
+/* ---------- PIN ---------- */
+function showPin(msg){
+  $("#app").hidden = true; $("#savebar").hidden = true; $("#pinForm").hidden = false;
+  $("#pinErr").textContent = msg || ""; $("#pin").value = ""; $("#pin").focus();
+}
+$("#pinForm").addEventListener("submit", e => {
+  e.preventDefault(); pin = $("#pin").value.trim(); start();
+});
+$("#signout").addEventListener("click", () => { store.set("lmr_review_pin", null); pin = null; destroyPlayers(); showPin(); });
+
+async function start(){
+  if (!pin) return showPin();
+  $("#pinErr").textContent = "Checking…";
+  try {
+    const j = await rpc("review_list");
+    store.set("lmr_review_pin", pin);
+    $("#pinForm").hidden = true; $("#app").hidden = false; $("#savebar").hidden = false;
+    clips = j.clips || []; nextBatch();
+  } catch(e){
+    if (e.pin) { store.set("lmr_review_pin", null); showPin(e.message); }
+    else showPin("Couldn't reach Supabase: " + e.message);
+  }
+}
+
+/* ---------- batches ---------- */
+function filtered(){ return clips.filter(c => fmt === "all" || c.format === fmt); }
+
+function nextBatch(){
+  destroyPlayers();
+  const pool = filtered();
+  batch = pool.slice(0, BATCH).map(c => ({ clip: c, reject: false, reason: REASONS[0], broken: null }));
+  $("#left").textContent = pool.length ? `${pool.length} waiting` : "";
+  render();
+}
+
+function render(){
+  const grid = $("#grid");
+  if (!batch.length){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><b>All caught up</b>Nothing waiting here. Henry will bring more after tonight's run.</div>`;
+    updateTally(); return;
+  }
+  grid.innerHTML = batch.map((b, i) => { const c = b.clip; return `
+    <article class="tile" data-i="${i}">
+      <div class="vid"><span class="num">${(i+1) % 10}</span><div id="p${i}"></div></div>
+      <div class="info">
+        <div class="match"><strong>${esc(c.home)} v ${esc(c.away)}</strong>
+          ${scoreStr(c) ? `<span class="score">${esc(scoreStr(c))}</span>` : ""}
+          <span>${esc(dateStr(c.played_on))}</span></div>
+        <p class="title" title="${esc(c.title)}">${esc(c.title)}</p>
+        <div class="meta">
+          ${c.competition ? `<span class="tag">${esc(c.competition)}</span>` : ""}
+          ${c.format === "vertical" ? `<span class="tag portrait">Portrait</span>` : ""}
+          ${c.source === "dailymotion" ? `<span class="tag">Dailymotion</span>` : ""}
+          ${c.channel_title ? `<span class="tag">${esc(c.channel_title)}</span>` : ""}
+          ${c.likely_official ? `<span class="tag official">Looks Official</span>` : ""}
+          ${c.duration_sec ? `<span class="tag">${dur(c.duration_sec)}</span>` : ""}
+        </div>
+      </div>
+      <button class="toggle" data-act="toggle" type="button"></button>
+      <div class="reasons">${[...REASONS, EMBED_REASON].map(r => `<button class="reason" type="button" data-reason="${esc(r)}">${esc(r)}</button>`).join("")}</div>
+    </article>`; }).join("");
+  batch.forEach((b, i) => { paintTile(i); mountPlayer(i); });
+  updateTally();
+}
+
+function paintTile(i){
+  const b = batch[i], el = document.querySelector(`.tile[data-i="${i}"]`); if (!el) return;
+  el.classList.toggle("rej", b.reject);
+  el.querySelector(".toggle").innerHTML = b.reject ? "✕ Reject" : "✓ Approve";
+  el.querySelectorAll(".reason").forEach(r => {
+    r.setAttribute("aria-pressed", r.dataset.reason === b.reason);
+    if (r.dataset.reason === EMBED_REASON) r.hidden = b.reason !== EMBED_REASON;
+  });
+  const vid = el.querySelector(".vid"), old = vid.querySelector(".broken");
+  if (b.broken && !old) vid.insertAdjacentHTML("beforeend", `<div class="broken">${esc(b.broken)}</div>`);
+}
+
+function updateTally(){
+  const rej = batch.filter(b => b.reject).length, app = batch.length - rej;
+  $("#tally").innerHTML = batch.length ? `<b class="a">${app}</b> approve · <b class="r">${rej}</b> reject` : "";
+  $("#save").textContent = batch.length ? `Save batch` : "Save batch";
+  $("#save").disabled = !batch.length || saving;
+  $("#allRej").hidden = !batch.length;
+}
+
+function toggle(i){
+  const b = batch[i]; if (!b) return;
+  b.reject = !b.reject;
+  if (b.reject && !b.reason) b.reason = REASONS[0];
+  paintTile(i); updateTally();
+}
+
+$("#grid").addEventListener("click", e => {
+  const tile = e.target.closest(".tile"); if (!tile) return;
+  const i = Number(tile.dataset.i);
+  if (e.target.closest("[data-act=toggle]")) toggle(i);
+  else if (e.target.dataset.reason){ batch[i].reason = e.target.dataset.reason; paintTile(i); }
+});
+$("#allRej").addEventListener("click", () => {
+  const all = batch.every(b => b.reject);
+  batch.forEach((b, i) => { b.reject = !all; paintTile(i); }); updateTally();
+});
+
+document.addEventListener("keydown", e => {
+  if ($("#app").hidden || e.target.tagName === "INPUT" || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (/^[0-9]$/.test(e.key)){ toggle(e.key === "0" ? 9 : Number(e.key) - 1); e.preventDefault(); }
+  else if (e.key === "Enter"){ save(); e.preventDefault(); }
+});
+
+/* ---------- save / undo ---------- */
+async function save(){
+  if (saving || !batch.length) return;
+  saving = true; updateTally(); $("#save").textContent = "Saving…";
+  const approve = batch.filter(b => !b.reject).map(b => b.clip.id);
+  const reject = batch.filter(b => b.reject).map(b => ({ id: b.clip.id, reason: b.reason || "Other" }));
+  try {
+    const j = await rpc("review_save", { p_approve: approve, p_reject: reject });
+    const ids = batch.map(b => b.clip.id);
+    lastSaved = { ids, clips: batch.map(b => b.clip) };
+    clips = clips.filter(c => !ids.includes(c.id));
+    saving = false;
+    showToast(`Saved: ${j.approved} approved, ${j.rejected} rejected.`);
+    setStatus("");
+    nextBatch(); window.scrollTo({ top: 0 });
+  } catch(e){
+    saving = false; updateTally();
+    if (e.pin) { store.set("lmr_review_pin", null); return showPin(e.message); }
+    setStatus("That batch didn't save: " + e.message + ". Press Enter to try again.", true);
+  }
+}
+$("#save").addEventListener("click", save);
+
+function showToast(text){
+  $("#toastText").textContent = text; $("#toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $("#toast").classList.remove("show"); lastSaved = null; }, 8000);
+}
+$("#undo").addEventListener("click", async () => {
+  if (!lastSaved) return;
+  const { ids } = lastSaved; lastSaved = null; $("#toast").classList.remove("show");
+  try {
+    await rpc("review_undo", { p_ids: ids });
+    const j = await rpc("review_list"); clips = j.clips || []; nextBatch();
+    setStatus("Batch put back in the queue.");
+  } catch(e){ setStatus("Couldn't undo that batch: " + e.message, true); }
+});
+
+/* ---------- filters ---------- */
+document.querySelectorAll("[data-fmt]").forEach(b => b.addEventListener("click", () => {
+  fmt = b.dataset.fmt; document.querySelectorAll("[data-fmt]").forEach(x => x.setAttribute("aria-pressed", x === b)); nextBatch();
+}));
+$("#skip").setAttribute("aria-pressed", skip);
+$("#skip").addEventListener("click", () => {
+  skip = !skip; store.set("lmr_review_skip", skip ? "1" : null); $("#skip").setAttribute("aria-pressed", skip);
+  players.forEach(p => { try { p && p.seekTo && p.seekTo(skip ? SKIP_SEC : 0, true); } catch(e){} });
+});
+$("#refresh").addEventListener("click", async () => {
+  setStatus("Refreshing…");
+  try { const j = await rpc("review_list"); clips = j.clips || []; setStatus(""); nextBatch(); }
+  catch(e){ if (e.pin) { store.set("lmr_review_pin", null); return showPin(e.message); } setStatus("Couldn't refresh: " + e.message, true); }
+});
+
+/* ---------- players ---------- */
+function markBroken(i, code){
+  const b = batch[i]; if (!b) return;
+  if (code === 150 || code === 101){ b.broken = "Won't play outside YouTube (owner blocks embedding)"; b.reason = EMBED_REASON; }
+  else if (code === 100){ b.broken = "Video removed or private"; b.reason = "Other"; }
+  else { b.broken = "Video won't load (error " + code + ")"; b.reason = "Other"; }
+  b.reject = true; paintTile(i); updateTally();
+}
+
+function mountPlayer(i){
+  const c = batch[i].clip;
+  if (c.source === "dailymotion"){
+    const f = document.createElement("iframe");
+    f.src = `https://www.dailymotion.com/embed/video/${encodeURIComponent(c.youtube_id)}?autoplay=1&mute=1&loop=1&queue-enable=0${skip ? "&start=" + SKIP_SEC : ""}`;
+    f.allow = "autoplay; fullscreen; picture-in-picture"; f.allowFullscreen = true;
+    $("#p" + i).replaceWith(f); players[i] = null; return;
+  }
+  if (!ytReady){ ytQueue.push(i); return; }
+  const startAt = skip ? SKIP_SEC : 0;
+  players[i] = new YT.Player("p" + i, {
+    videoId: c.youtube_id,
+    playerVars: { autoplay: 1, mute: 1, controls: 1, rel: 0, iv_load_policy: 3, playsinline: 1, start: startAt },
+    events: {
+      onReady: e => { e.target.mute(); e.target.playVideo(); },
+      onStateChange: e => { if (e.data === 0) { e.target.seekTo(skip ? SKIP_SEC : 0, true); e.target.playVideo(); } },
+      onError: e => markBroken(i, e.data)
+    }
+  });
+}
+function destroyPlayers(){
+  players.forEach(p => { try { p && p.destroy && p.destroy(); } catch(e){} });
+  players = []; ytQueue = [];
+}
+window.onYouTubeIframeAPIReady = () => { ytReady = true; const q = ytQueue; ytQueue = []; q.forEach(i => batch[i] && mountPlayer(i)); };
+(() => { const s = document.createElement("script"); s.src = "https://www.youtube.com/iframe_api"; document.head.appendChild(s); })();
+
+start();
+</script>
+</body>
+</html>
