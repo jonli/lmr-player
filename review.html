@@ -58,6 +58,9 @@
   .tag.official{color:#7fd6ff;border-color:#21465a}
   .tag.portrait{color:var(--accent);border-color:#3c5420}
   .tag.ch{color:var(--text)}
+  .claude{font-size:12px;line-height:1.4;color:var(--muted);margin:0}
+  .claude b{font-weight:600;color:var(--text)}
+  .claude.bad b{color:var(--red)} .claude.ok b{color:var(--accent)} .claude.unsure b{color:var(--amber)}
   .decide{margin:10px 12px 12px;width:calc(100% - 24px);appearance:none;-webkit-appearance:none;border:0;border-radius:10px;padding:11px 36px 11px 12px;
     font:600 14px Inter,sans-serif;cursor:pointer;background:var(--accent-bg);color:var(--accent);
     background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);
@@ -114,7 +117,7 @@
       <button class="chip" id="signout">Forget PIN</button>
     </div>
   </header>
-  <p class="help">Every clip starts as Approve. Change the ones you don't want with the menu under each clip, or press <kbd>1</kbd>–<kbd>0</kbd> to flip a clip between Approve and Reject. Press <kbd>Enter</kbd> to save the batch.</p>
+  <p class="help">Every clip starts on Claude's suggestion (or Approve if Claude hasn't checked it or isn't sure). Change any you disagree with using the menu under each clip, or press <kbd>1</kbd>–<kbd>0</kbd> to flip a clip between Approve and Reject. Press <kbd>Enter</kbd> to save the batch.</p>
   <section class="rules" id="rulesPanel" hidden></section>
   <div class="status" id="status"></div>
   <div class="grid" id="grid"></div>
@@ -229,7 +232,9 @@ function filtered(){ return clips.filter(c => fmt === "all" || c.format === fmt)
 function nextBatch(){
   destroyPlayers();
   const pool = filtered();
-  batch = pool.slice(0, BATCH).map(c => ({ clip: c, v: "approve", broken: null, reason: null }));
+  // start each clip on Claude's suggestion (if it has one); "unsure" starts on Approve
+  const firstChoice = { bad_clip: "bad", wrong_match: "wrong" };
+  batch = pool.slice(0, BATCH).map(c => ({ clip: c, v: firstChoice[c.claude_verdict] || "approve", broken: null, reason: null }));
   $("#left").textContent = pool.length ? `${pool.length} waiting` : "";
   render();
 }
@@ -272,11 +277,21 @@ function render(){
           ${c.source === "dailymotion" ? `<span class="tag">Dailymotion</span>` : ""}
           ${c.duration_sec ? `<span class="tag">${dur(c.duration_sec)}</span>` : ""}
         </div>
+        ${claudeLine(c)}
       </div>
       <select class="decide" id="decide${i}" aria-label="Decision for clip ${(i+1) % 10}"></select>
     </article>`; }).join("");
   batch.forEach((b, i) => { paintTile(i); mountPlayer(i); });
   updateTally();
+}
+
+function claudeLine(c){
+  if (!c.claude_verdict) return "";
+  const head = { approve: ["ok", "Claude: looks good"], bad_clip: ["bad", "Claude: bad clip"],
+                 wrong_match: ["bad", "Claude: wrong match"], unsure: ["unsure", "Claude isn't sure"] }[c.claude_verdict];
+  if (!head) return "";
+  const conf = c.claude_confidence && c.claude_verdict !== "unsure" ? ` (${c.claude_confidence})` : "";
+  return `<p class="claude ${head[0]}"><b>${head[1]}${conf}.</b> ${esc(c.claude_reason || "")}</p>`;
 }
 
 function isReject(b){ return !!b.broken || CH[b.v].reject; }
