@@ -58,6 +58,11 @@
   .tag.official{color:#7fd6ff;border-color:#21465a}
   .tag.portrait{color:var(--accent);border-color:#3c5420}
   .tag.ch{color:var(--text)}
+  a.title{color:var(--text);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+  a.title:hover{text-decoration-color:var(--accent)}
+  a.title .ext{color:var(--muted);font-size:11px;margin-left:4px;white-space:nowrap}
+  .tile.skip{border-style:dashed}
+  .tile.skip .decide{background-color:var(--panel2);color:var(--muted)}
   .claude{font-size:12px;line-height:1.4;color:var(--muted);margin:0}
   .claude b{font-weight:600;color:var(--text)}
   .claude.bad b{color:var(--red)} .claude.ok b{color:var(--accent)} .claude.unsure b{color:var(--amber)}
@@ -117,7 +122,7 @@
       <button class="chip" id="signout">Forget PIN</button>
     </div>
   </header>
-  <p class="help">Every clip starts on Claude's suggestion (or Approve if Claude hasn't checked it or isn't sure). Change any you disagree with using the menu under each clip, or press <kbd>1</kbd>–<kbd>0</kbd> to flip a clip between Approve and Reject. Press <kbd>Enter</kbd> to save the batch.</p>
+  <p class="help">Every clip starts as Approve. Change any you don't want using the menu under each clip, or press its number key (<kbd>1</kbd>–<kbd>9</kbd>, and <kbd>0</kbd> for clip 10) to flip it between Approve and Reject. Pick <b>Skip for now</b> to leave a clip in the review list for later. Tap a title to open the video in a new tab. Press <kbd>Enter</kbd> to save the batch.</p>
   <section class="rules" id="rulesPanel" hidden></section>
   <div class="status" id="status"></div>
   <div class="grid" id="grid"></div>
@@ -145,6 +150,7 @@ const CHOICES = [
   { v: "bad",            label: "✕ Reject: bad clip",           reject: true, reason: "Bad clip" },
   { v: "wrong",          label: "✕ Reject: wrong match",        reject: true, reason: "Wrong match" },
   { v: "reject_always",  label: "✕ Reject + always this channel", reject: true, reason: "Channel rejected", rule: "reject", channel: true },
+  { v: "skip",           label: "… Skip for now (stays in review)", reject: false, skip: true },
 ];
 const CH = Object.fromEntries(CHOICES.map(c => [c.v, c]));
 
@@ -227,7 +233,12 @@ $("#rulesPanel").addEventListener("click", async e => {
 });
 
 /* ---------- batches ---------- */
-function filtered(){ return clips.filter(c => fmt === "all" || c.format === fmt); }
+// skipped clips stay in the review list but go to the back of the queue (for this visit)
+let skipped = new Set();
+function filtered(){
+  const f = clips.filter(c => fmt === "all" || c.format === fmt);
+  return f.filter(c => !skipped.has(c.id)).concat(f.filter(c => skipped.has(c.id)));
+}
 
 function nextBatch(){
   destroyPlayers();
@@ -263,12 +274,12 @@ function render(){
   }
   grid.innerHTML = batch.map((b, i) => { const c = b.clip; return `
     <article class="tile" data-i="${i}">
-      <div class="vid"><span class="num">${(i+1) % 10}</span><div id="p${i}"></div></div>
+      <div class="vid"><span class="num">${i+1}</span><div id="p${i}"></div></div>
       <div class="info">
         <div class="match"><strong>${esc(c.home)} v ${esc(c.away)}</strong>
           ${scoreStr(c) ? `<span class="score">${esc(scoreStr(c))}</span>` : ""}
           <span>${esc(dateStr(c.played_on))}</span></div>
-        <p class="title" title="${esc(c.title)}">${esc(c.title)}</p>
+        <a class="title" href="${esc(watchUrl(c))}" target="_blank" rel="noopener" title="Open on ${c.source === "dailymotion" ? "Dailymotion" : "YouTube"} in a new tab">${esc(c.title)}<span class="ext">↗ ${c.source === "dailymotion" ? "Dailymotion" : "YouTube"}</span></a>
         <div class="meta">
           ${c.channel_title ? `<span class="tag ch">${esc(c.channel_title)}</span>` : ""}
           ${c.likely_official ? `<span class="tag official">Looks Official</span>` : ""}
@@ -279,10 +290,16 @@ function render(){
         </div>
         ${claudeLine(c)}
       </div>
-      <select class="decide" id="decide${i}" aria-label="Decision for clip ${(i+1) % 10}"></select>
+      <select class="decide" id="decide${i}" aria-label="Decision for clip ${i+1}"></select>
     </article>`; }).join("");
   batch.forEach((b, i) => { paintTile(i); mountPlayer(i); });
   updateTally();
+}
+
+function watchUrl(c){
+  const id = encodeURIComponent(c.youtube_id);
+  if (c.source === "dailymotion") return "https://www.dailymotion.com/video/" + id;
+  return c.format === "vertical" ? "https://www.youtube.com/shorts/" + id : "https://www.youtube.com/watch?v=" + id;
 }
 
 function claudeLine(c){
@@ -303,15 +320,16 @@ function paintTile(i){
   sel.value = b.broken ? "broken" : b.v;
   sel.disabled = !!b.broken;
   el.classList.toggle("rej", isReject(b));
+  el.classList.toggle("skip", !b.broken && b.v === "skip");
   const vid = el.querySelector(".vid");
   if (b.broken && !vid.querySelector(".broken")) vid.insertAdjacentHTML("beforeend", `<div class="broken">${esc(b.broken)}</div>`);
 }
 
 function updateTally(){
-  const rej = batch.filter(isReject).length, app = batch.length - rej;
+  const rej = batch.filter(isReject).length, skp = batch.filter(b => !b.broken && b.v === "skip").length, app = batch.length - rej - skp;
   const nRules = channelRules().length;
   $("#tally").innerHTML = batch.length
-    ? `<b class="a">${app}</b> approve · <b class="r">${rej}</b> reject` + (nRules ? ` · ${nRules} channel rule${nRules > 1 ? "s" : ""}` : "")
+    ? `<b class="a">${app}</b> approve · <b class="r">${rej}</b> reject` + (skp ? ` · ${skp} skipped` : "") + (nRules ? ` · ${nRules} channel rule${nRules > 1 ? "s" : ""}` : "")
     : "";
   $("#save").disabled = !batch.length || saving;
   if (!saving) $("#save").textContent = "Save batch";
@@ -358,21 +376,24 @@ async function save(){
   if (saving || !batch.length) return;
   saving = true; updateTally(); $("#save").textContent = "Saving…";
   const approve = [], reject = [];
+  const skipNow = [];
   batch.forEach(b => {
     if (b.broken) reject.push({ id: b.clip.id, reason: b.reason });
+    else if (CH[b.v].skip) skipNow.push(b.clip.id);
     else if (CH[b.v].reject) reject.push({ id: b.clip.id, reason: CH[b.v].reason });
     else approve.push(b.clip.id);
   });
   const ruleList = channelRules();
   try {
     const j = await rpc("review_save", { p_approve: approve, p_reject: reject, p_rules: ruleList });
-    const ids = batch.map(b => b.clip.id).concat(j.rule_ids || []);
+    skipNow.forEach(id => skipped.add(id));
+    const ids = approve.concat(reject.map(r => r.id), j.rule_ids || []);
     lastSaved = { ids, rules: ruleList };
     clips = clips.filter(c => !ids.includes(c.id));
     ruleList.forEach(r => { savedRules = savedRules.filter(s => !(s.source === r.source && s.channel_id === r.channel_id)); savedRules.unshift(r); });
     renderRules();
     saving = false;
-    let msg = `Saved: ${j.approved} approved, ${j.rejected} rejected.`;
+    let msg = `Saved: ${j.approved} approved, ${j.rejected} rejected` + (skipNow.length ? `, ${skipNow.length} skipped for later.` : ".");
     const parts = [];
     if (j.rule_approved) parts.push(`${j.rule_approved} more approved`);
     if (j.rule_rejected) parts.push(`${j.rule_rejected} more rejected`);
