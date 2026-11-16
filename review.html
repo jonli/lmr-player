@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* Layout: sticky filter bar, grid of 10 muted autoplaying clips, sticky save bar at the bottom */
+  /* Layout: sticky filter bar, grid of 10 muted autoplaying clips, one decision dropdown per clip, sticky save bar */
   :root{
     --bg:#0d1210; --panel:#151c19; --panel2:#1c2521; --line:#26312c;
     --text:#eef3f0; --muted:#8fa199; --accent:#b8f34a; --accent-ink:#13200a; --accent-bg:#22301b;
@@ -18,8 +18,8 @@
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
-  button{font-family:inherit}
-  button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  button,select{font-family:inherit}
+  button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .wrap{max-width:1600px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right)) 120px max(16px,env(safe-area-inset-left))}
   header{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;margin-bottom:12px}
   header h1{font-size:22px;margin:0;font-weight:700;letter-spacing:-.01em}
@@ -58,19 +58,13 @@
   .tag.official{color:#7fd6ff;border-color:#21465a}
   .tag.portrait{color:var(--accent);border-color:#3c5420}
   .tag.ch{color:var(--text)}
-  .actions{display:flex;gap:8px;margin:10px 12px 12px}
-  .toggle{flex:1;border:0;border-radius:10px;padding:11px;font:600 14px Inter,sans-serif;cursor:pointer;background:var(--accent-bg);color:var(--accent)}
-  .tile.rej .toggle{background:var(--red-bg);color:var(--red)}
-  .always{flex:0 0 auto;border:1px dashed #3c5420;background:transparent;color:var(--accent);border-radius:10px;padding:8px 10px;font:600 12px/1.2 Inter,sans-serif;cursor:pointer;text-align:center}
-  .tile.rej .always{border-color:var(--red-line);color:var(--red)}
-  .always[aria-pressed="true"]{border-style:solid;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-  .tile.rej .always[aria-pressed="true"]{background:var(--red);color:#2a0b08;border-color:var(--red)}
-  .always small{display:block;font-weight:500;opacity:.8}
-  .note{margin:-4px 12px 12px;font-size:12px;color:var(--muted)}
-  .reasons{display:none;flex-wrap:wrap;gap:6px;padding:0 12px 12px;margin-top:-4px}
-  .tile.rej .reasons.show{display:flex}
-  .reason{border:1px solid var(--red-line);background:transparent;color:var(--red);border-radius:999px;padding:5px 10px;font:500 12px Inter,sans-serif;cursor:pointer}
-  .reason[aria-pressed="true"]{background:var(--red);color:#2a0b08;border-color:var(--red)}
+  .decide{margin:10px 12px 12px;width:calc(100% - 24px);appearance:none;-webkit-appearance:none;border:0;border-radius:10px;padding:11px 36px 11px 12px;
+    font:600 14px Inter,sans-serif;cursor:pointer;background:var(--accent-bg);color:var(--accent);
+    background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);
+    background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  .tile.rej .decide{background-color:var(--red-bg);color:var(--red)}
+  .decide option{background:var(--panel);color:var(--text)}
+  .decide:disabled{cursor:default;opacity:.9}
 
   .savebar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(13,18,16,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);
     padding:12px max(16px,env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
@@ -120,7 +114,7 @@
       <button class="chip" id="signout">Forget PIN</button>
     </div>
   </header>
-  <p class="help">Every clip is approved unless you flag it. Tap a clip's bar, or press <kbd>1</kbd>–<kbd>0</kbd>, to reject it. <b>Always</b> (or <kbd>Shift</kbd>+number) makes the same call for every clip from that channel, now and in future. Press <kbd>Enter</kbd> to save the batch.</p>
+  <p class="help">Every clip starts as Approve. Change the ones you don't want with the menu under each clip, or press <kbd>1</kbd>–<kbd>0</kbd> to flip a clip between Approve and Reject. Press <kbd>Enter</kbd> to save the batch.</p>
   <section class="rules" id="rulesPanel" hidden></section>
   <div class="status" id="status"></div>
   <div class="grid" id="grid"></div>
@@ -140,8 +134,16 @@
 const SB_URL = "https://vpvsqfbhaigxnkqydnqc.supabase.co";
 const SB_KEY = "sb_publishable_EZ32-EmLYlETo-DwG7N3EQ_p-DS3m8c"; // public key, same as the app
 const BATCH = 10, SKIP_SEC = 20;
-const REASONS = ["Bad clip", "Wrong match"];          // Bad clip: never suggest again. Wrong match: off this match only.
-const EMBED_REASON = "Owner blocks embedding";
+
+// The choices in each clip's menu. reason = what Henry sees. Bad clip: never suggest again. Wrong match: off this match only.
+const CHOICES = [
+  { v: "approve",        label: "✓ Approve",                    reject: false },
+  { v: "approve_always", label: "✓ Approve + always this channel", reject: false, rule: "approve", channel: true },
+  { v: "bad",            label: "✕ Reject: bad clip",           reject: true, reason: "Bad clip" },
+  { v: "wrong",          label: "✕ Reject: wrong match",        reject: true, reason: "Wrong match" },
+  { v: "reject_always",  label: "✕ Reject + always this channel", reject: true, reason: "Channel rejected", rule: "reject", channel: true },
+];
+const CH = Object.fromEntries(CHOICES.map(c => [c.v, c]));
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -149,7 +151,6 @@ const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return
                 set(k,v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k,v); } catch(e){} } };
 
 let pin = store.get("lmr_review_pin"), clips = [], savedRules = [], batch = [], fmt = "all", skip = store.get("lmr_review_skip") === "1";
-let rules = new Map();   // channel key -> { rule, owner (batch index) } for this batch
 let players = [], ytReady = false, ytQueue = [], lastSaved = null, toastTimer = null, saving = false;
 
 const chKey = c => c.channel_id ? (c.source || "youtube") + ":" + c.channel_id : null;
@@ -202,13 +203,12 @@ async function start(){
 /* ---------- channel rules panel ---------- */
 function renderRules(){
   $("#rulesBtn").textContent = savedRules.length ? `Channel rules (${savedRules.length})` : "Channel rules";
-  const p = $("#rulesPanel");
-  p.innerHTML = `<h2>Channel rules</h2>` + (savedRules.length
+  $("#rulesPanel").innerHTML = `<h2>Channel rules</h2>` + (savedRules.length
     ? `<p>Henry applies these to every new clip from the channel. Remove one to start reviewing that channel again.</p>` +
       savedRules.map(r => `<div class="rule"><span class="pill ${r.rule}">${r.rule === "approve" ? "Always approve" : "Always reject"}</span>
         <span>${esc(r.channel_title || r.channel_id)}</span>
         <button type="button" data-src="${esc(r.source)}" data-ch="${esc(r.channel_id)}">Remove</button></div>`).join("")
-    : `<p>No rules yet. Tap <b>Always</b> on a clip to approve or reject everything from its channel.</p>`);
+    : `<p>No rules yet. Pick "always this channel" in a clip's menu to approve or reject everything from that channel.</p>`);
 }
 $("#rulesBtn").addEventListener("click", () => {
   const p = $("#rulesPanel"); p.hidden = !p.hidden; $("#rulesBtn").setAttribute("aria-pressed", !p.hidden);
@@ -228,26 +228,26 @@ function filtered(){ return clips.filter(c => fmt === "all" || c.format === fmt)
 
 function nextBatch(){
   destroyPlayers();
-  rules = new Map();
   const pool = filtered();
-  batch = pool.slice(0, BATCH).map(c => ({ clip: c, reject: false, reason: REASONS[0], broken: null }));
+  batch = pool.slice(0, BATCH).map(c => ({ clip: c, v: "approve", broken: null, reason: null }));
   $("#left").textContent = pool.length ? `${pool.length} waiting` : "";
   render();
-}
-
-// what will actually be saved for tile i
-function effective(i){
-  const b = batch[i], r = rules.get(chKey(b.clip));
-  if (b.broken) return { reject: true, reason: b.reason, rule: r, follows: false };
-  if (r && r.owner !== i) return { reject: r.rule === "reject", reason: "Channel rejected", rule: r, follows: true };
-  if (r) return { reject: r.rule === "reject", reason: r.rule === "reject" ? "Channel rejected" : null, rule: r, follows: false };
-  return { reject: b.reject, reason: b.reason, rule: null, follows: false };
 }
 
 function othersWaiting(c){
   const k = chKey(c); if (!k) return 0;
   const inBatch = new Set(batch.map(b => b.clip.id));
   return clips.filter(x => chKey(x) === k && !inBatch.has(x.id)).length;
+}
+
+function optionsFor(b){
+  if (b.broken) return `<option value="broken">✕ Rejected: ${esc(b.broken)}</option>`;
+  const name = b.clip.channel_title || "this channel", n = othersWaiting(b.clip);
+  return CHOICES.filter(o => !o.channel || chKey(b.clip)).map(o => {
+    let label = o.label;
+    if (o.channel) label = label.replace("this channel", name) + (n ? ` (+${n} waiting)` : "");
+    return `<option value="${o.v}">${esc(label)}</option>`;
+  }).join("");
 }
 
 function render(){
@@ -273,96 +273,68 @@ function render(){
           ${c.duration_sec ? `<span class="tag">${dur(c.duration_sec)}</span>` : ""}
         </div>
       </div>
-      <div class="actions">
-        <button class="toggle" data-act="toggle" type="button"></button>
-        ${chKey(c) ? `<button class="always" data-act="always" type="button"></button>` : ""}
-      </div>
-      <p class="note" hidden></p>
-      <div class="reasons">${[...REASONS, EMBED_REASON, "No longer available"].map(r => `<button class="reason" type="button" data-reason="${esc(r)}">${esc(r)}</button>`).join("")}</div>
+      <select class="decide" id="decide${i}" aria-label="Decision for clip ${(i+1) % 10}"></select>
     </article>`; }).join("");
   batch.forEach((b, i) => { paintTile(i); mountPlayer(i); });
   updateTally();
 }
 
+function isReject(b){ return !!b.broken || CH[b.v].reject; }
+
 function paintTile(i){
   const b = batch[i], el = document.querySelector(`.tile[data-i="${i}"]`); if (!el) return;
-  const ef = effective(i);
-  el.classList.toggle("rej", ef.reject);
-  el.querySelector(".toggle").textContent = ef.reject ? "✕ Reject" : "✓ Approve";
-
-  const al = el.querySelector(".always");
-  if (al){
-    const n = othersWaiting(b.clip), owner = ef.rule && !ef.follows;
-    al.setAttribute("aria-pressed", !!owner);
-    al.innerHTML = `Always ${ef.reject ? "reject" : "approve"}<small>${n ? `channel · +${n} waiting` : "this channel"}</small>`;
-    al.title = `${ef.reject ? "Reject" : "Approve"} every clip from ${b.clip.channel_title || "this channel"}, now and in future`;
-    al.hidden = !!b.broken || ef.follows;
-  }
-  const note = el.querySelector(".note");
-  note.hidden = !ef.follows;
-  if (ef.follows) note.textContent = `Following your rule for ${b.clip.channel_title}. Tap the bar to decide this one yourself.`;
-
-  const showReasons = ef.reject && !ef.rule && !ef.follows;
-  el.querySelector(".reasons").classList.toggle("show", showReasons || !!b.broken);
-  el.querySelectorAll(".reason").forEach(r => {
-    const auto = r.dataset.reason === EMBED_REASON || r.dataset.reason === "No longer available";
-    r.hidden = b.broken ? r.dataset.reason !== b.reason : auto;
-    r.setAttribute("aria-pressed", r.dataset.reason === b.reason);
-  });
-  const vid = el.querySelector(".vid"), old = vid.querySelector(".broken");
-  if (b.broken && !old) vid.insertAdjacentHTML("beforeend", `<div class="broken">${esc(b.broken)}</div>`);
+  const sel = el.querySelector(".decide");
+  sel.innerHTML = optionsFor(b);
+  sel.value = b.broken ? "broken" : b.v;
+  sel.disabled = !!b.broken;
+  el.classList.toggle("rej", isReject(b));
+  const vid = el.querySelector(".vid");
+  if (b.broken && !vid.querySelector(".broken")) vid.insertAdjacentHTML("beforeend", `<div class="broken">${esc(b.broken)}</div>`);
 }
-function paintChannel(k){ batch.forEach((b, j) => { if (chKey(b.clip) === k) paintTile(j); }); updateTally(); }
 
 function updateTally(){
-  let rej = 0; batch.forEach((b, i) => { if (effective(i).reject) rej++; });
-  const app = batch.length - rej, nRules = rules.size;
-  let more = 0;
-  rules.forEach((r, k) => { const owner = batch[r.owner]; if (owner) more += othersWaiting(owner.clip); });
+  const rej = batch.filter(isReject).length, app = batch.length - rej;
+  const nRules = channelRules().length;
   $("#tally").innerHTML = batch.length
-    ? `<b class="a">${app}</b> approve · <b class="r">${rej}</b> reject` + (nRules ? ` · ${nRules} channel rule${nRules > 1 ? "s" : ""}${more ? ` (+${more} waiting)` : ""}` : "")
+    ? `<b class="a">${app}</b> approve · <b class="r">${rej}</b> reject` + (nRules ? ` · ${nRules} channel rule${nRules > 1 ? "s" : ""}` : "")
     : "";
   $("#save").disabled = !batch.length || saving;
   if (!saving) $("#save").textContent = "Save batch";
   $("#allRej").hidden = !batch.length;
 }
 
-function toggle(i){
+// set tile i; an "always" choice is copied to the other clips from that channel in this batch
+function choose(i, v){
   const b = batch[i]; if (!b || b.broken) return;
-  const k = chKey(b.clip), r = rules.get(k);
-  if (r && r.owner === i){ r.rule = r.rule === "approve" ? "reject" : "approve"; b.reject = r.rule === "reject"; paintChannel(k); return; }
-  if (r){ // decide this one yourself: the rule stops applying to the batch
-    const now = effective(i).reject; rules.delete(k); b.reject = !now; paintChannel(k); return;
-  }
-  b.reject = !b.reject; paintTile(i); updateTally();
+  b.v = v;
+  const k = chKey(b.clip);
+  if (CH[v].channel && k) batch.forEach((x, j) => { if (j !== i && !x.broken && chKey(x.clip) === k) { x.v = v; paintTile(j); } });
+  paintTile(i); updateTally();
 }
 
-function setAlways(i){
-  const b = batch[i]; if (!b || b.broken) return;
-  const k = chKey(b.clip); if (!k) return;
-  const r = rules.get(k);
-  if (r && r.owner === i) rules.delete(k);
-  else rules.set(k, { rule: effective(i).reject ? "reject" : "approve", owner: i });
-  paintChannel(k);
+// one rule per channel (choose() keeps a channel's clips in the batch on the same "always" choice)
+function channelRules(){
+  const m = new Map();
+  batch.forEach(b => {
+    const o = CH[b.v];
+    if (!b.broken && o.channel && chKey(b.clip)) m.set(chKey(b.clip), { source: b.clip.source || "youtube", channel_id: b.clip.channel_id, channel_title: b.clip.channel_title, rule: o.rule });
+  });
+  return [...m.values()];
 }
 
-$("#grid").addEventListener("click", e => {
-  const tile = e.target.closest(".tile"); if (!tile) return;
-  const i = Number(tile.dataset.i);
-  if (e.target.closest("[data-act=toggle]")) toggle(i);
-  else if (e.target.closest("[data-act=always]")) setAlways(i);
-  else if (e.target.dataset.reason){ batch[i].reason = e.target.dataset.reason; paintTile(i); }
+$("#grid").addEventListener("change", e => {
+  const sel = e.target.closest(".decide"); if (!sel) return;
+  choose(Number(sel.closest(".tile").dataset.i), sel.value);
 });
 $("#allRej").addEventListener("click", () => {
-  const all = batch.every((b, i) => effective(i).reject);
-  rules = new Map();
-  batch.forEach((b, i) => { if (!b.broken) b.reject = !all; paintTile(i); }); updateTally();
+  const all = batch.every(isReject);
+  batch.forEach((b, i) => { if (!b.broken) { b.v = all ? "approve" : "bad"; paintTile(i); } }); updateTally();
 });
 
 document.addEventListener("keydown", e => {
-  if ($("#app").hidden || e.target.tagName === "INPUT" || e.ctrlKey || e.metaKey || e.altKey) return;
+  if ($("#app").hidden || /^(INPUT|SELECT)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
   const m = /^Digit([0-9])$/.exec(e.code) || /^Numpad([0-9])$/.exec(e.code);
-  if (m){ const i = m[1] === "0" ? 9 : Number(m[1]) - 1; e.shiftKey ? setAlways(i) : toggle(i); e.preventDefault(); }
+  if (m){ const i = m[1] === "0" ? 9 : Number(m[1]) - 1; const b = batch[i]; if (b) choose(i, CH[b.v].reject ? "approve" : "bad"); e.preventDefault(); }
   else if (e.key === "Enter"){ save(); e.preventDefault(); }
 });
 
@@ -371,25 +343,25 @@ async function save(){
   if (saving || !batch.length) return;
   saving = true; updateTally(); $("#save").textContent = "Saving…";
   const approve = [], reject = [];
-  batch.forEach((b, i) => { const ef = effective(i); if (ef.reject) reject.push({ id: b.clip.id, reason: ef.reason || "Bad clip" }); else approve.push(b.clip.id); });
-  const ruleList = [];
-  rules.forEach((r, k) => { const c = batch[r.owner].clip; ruleList.push({ source: c.source || "youtube", channel_id: c.channel_id, channel_title: c.channel_title, rule: r.rule }); });
+  batch.forEach(b => {
+    if (b.broken) reject.push({ id: b.clip.id, reason: b.reason });
+    else if (CH[b.v].reject) reject.push({ id: b.clip.id, reason: CH[b.v].reason });
+    else approve.push(b.clip.id);
+  });
+  const ruleList = channelRules();
   try {
     const j = await rpc("review_save", { p_approve: approve, p_reject: reject, p_rules: ruleList });
-    const ruleIds = j.rule_ids || [];
-    const ids = batch.map(b => b.clip.id).concat(ruleIds);
+    const ids = batch.map(b => b.clip.id).concat(j.rule_ids || []);
     lastSaved = { ids, rules: ruleList };
     clips = clips.filter(c => !ids.includes(c.id));
     ruleList.forEach(r => { savedRules = savedRules.filter(s => !(s.source === r.source && s.channel_id === r.channel_id)); savedRules.unshift(r); });
     renderRules();
     saving = false;
     let msg = `Saved: ${j.approved} approved, ${j.rejected} rejected.`;
-    if (j.rule_approved || j.rule_rejected){
-      const parts = [];
-      if (j.rule_approved) parts.push(`${j.rule_approved} more approved`);
-      if (j.rule_rejected) parts.push(`${j.rule_rejected} more rejected`);
-      msg += ` Channel rules: ${parts.join(", ")}.`;
-    }
+    const parts = [];
+    if (j.rule_approved) parts.push(`${j.rule_approved} more approved`);
+    if (j.rule_rejected) parts.push(`${j.rule_rejected} more rejected`);
+    if (parts.length) msg += ` Channel rules: ${parts.join(", ")}.`;
     showToast(msg); setStatus("");
     nextBatch(); window.scrollTo({ top: 0 });
   } catch(e){
@@ -433,12 +405,9 @@ $("#refresh").addEventListener("click", async () => {
 /* ---------- players ---------- */
 function markBroken(i, code){
   const b = batch[i]; if (!b) return;
-  if (code === 150 || code === 101){ b.broken = "Won't play outside YouTube (owner blocks embedding)"; b.reason = EMBED_REASON; }
+  if (code === 150 || code === 101){ b.broken = "Won't play outside YouTube"; b.reason = "Owner blocks embedding"; }
   else if (code === 100){ b.broken = "Video removed or private"; b.reason = "No longer available"; }
   else { b.broken = "Video won't load (error " + code + ")"; b.reason = "Bad clip"; }
-  b.reject = true;
-  const r = rules.get(chKey(b.clip)); if (r && r.owner === i) rules.delete(chKey(b.clip));
-  paintChannel(chKey(b.clip) || "");
   paintTile(i); updateTally();
 }
 
