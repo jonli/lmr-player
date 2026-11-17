@@ -279,13 +279,14 @@ function render(){
         <div class="match"><strong>${esc(c.home)} v ${esc(c.away)}</strong>
           ${scoreStr(c) ? `<span class="score">${esc(scoreStr(c))}</span>` : ""}
           <span>${esc(dateStr(c.played_on))}</span></div>
-        <a class="title" href="${esc(watchUrl(c))}" target="_blank" rel="noopener" title="Open on ${c.source === "dailymotion" ? "Dailymotion" : "YouTube"} in a new tab">${esc(c.title)}<span class="ext">↗ ${c.source === "dailymotion" ? "Dailymotion" : "YouTube"}</span></a>
+        <a class="title" href="${esc(watchUrl(c))}" target="_blank" rel="noopener" title="Open on ${({ dailymotion: "Dailymotion", facebook: "Facebook" })[c.source] || "YouTube"} in a new tab">${esc(c.title)}<span class="ext">↗ ${({ dailymotion: "Dailymotion", facebook: "Facebook" })[c.source] || "YouTube"}</span></a>
         <div class="meta">
           ${c.channel_title ? `<span class="tag ch">${esc(c.channel_title)}</span>` : ""}
           ${c.likely_official ? `<span class="tag official">Looks Official</span>` : ""}
           ${c.competition ? `<span class="tag">${esc(c.competition)}</span>` : ""}
           ${c.format === "vertical" ? `<span class="tag portrait">Portrait</span>` : ""}
           ${c.source === "dailymotion" ? `<span class="tag">Dailymotion</span>` : ""}
+          ${c.source === "facebook" ? `<span class="tag">Facebook</span>` : ""}
           ${c.duration_sec ? `<span class="tag">${dur(c.duration_sec)}</span>` : ""}
         </div>
         ${claudeLine(c)}
@@ -299,6 +300,7 @@ function render(){
 function watchUrl(c){
   const id = encodeURIComponent(c.youtube_id);
   if (c.source === "dailymotion") return "https://www.dailymotion.com/video/" + id;
+  if (c.source === "facebook") return /^https?:\/\//.test(c.youtube_id || "") ? c.youtube_id : "https://www.facebook.com/watch/?v=" + id;
   return c.format === "vertical" ? "https://www.youtube.com/shorts/" + id : "https://www.youtube.com/watch?v=" + id;
 }
 
@@ -454,6 +456,16 @@ function mountPlayer(i){
     f.src = `https://www.dailymotion.com/embed/video/${encodeURIComponent(c.youtube_id)}?autoplay=1&mute=1&loop=1&queue-enable=0${skip ? "&start=" + SKIP_SEC : ""}`;
     f.allow = "autoplay; fullscreen; picture-in-picture"; f.allowFullscreen = true;
     $("#p" + i).replaceWith(f); players[i] = null; return;
+  }
+  if (c.source === "facebook"){
+    const f = document.createElement("iframe");
+    f.src = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(watchUrl(c))}&autoplay=true&mute=true&show_text=false`;
+    f.allow = "autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"; f.allowFullscreen = true;
+    $("#p" + i).replaceWith(f); players[i] = null; return;
+  }
+  if (!/^[A-Za-z0-9_-]{11}$/.test(c.youtube_id || "")){
+    batch[i].broken = "Can't play this clip here"; batch[i].reason = "Bad clip";
+    paintTile(i); updateTally(); return;
   }
   if (!ytReady){ ytQueue.push(i); return; }
   players[i] = new YT.Player("p" + i, {
