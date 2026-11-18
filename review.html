@@ -94,6 +94,31 @@
   .toast{position:fixed;left:50%;bottom:90px;z-index:30;transform:translateX(-50%) translateY(200px);background:#222c27;border:1px solid var(--line);color:var(--text);padding:12px 12px 12px 16px;border-radius:14px;display:flex;gap:14px;align-items:center;font-size:14px;transition:transform .25s;box-shadow:0 10px 30px rgba(0,0,0,.4);max-width:calc(100% - 32px)}
   .toast.show{transform:translateX(-50%) translateY(0)}
   .toast button{background:transparent;border:1px solid var(--line);color:var(--accent);border-radius:10px;padding:6px 12px;font:600 14px Inter,sans-serif;cursor:pointer}
+  /* Tabs: Clips (review) and Offers (affiliate ads in the app) */
+  .tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px}
+  .tab{border:0;background:transparent;color:var(--muted);border-radius:999px;padding:7px 14px;font:600 13px Inter,sans-serif;cursor:pointer}
+  .tab[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+  .slot{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 14px}
+  .slot h2{font-size:16px;margin:0 0 2px}
+  .slot > p{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.45}
+  .offer{border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 10px;background:var(--panel2);display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:10px 12px}
+  .offer.off{opacity:.62}
+  .offer label{display:flex;flex-direction:column;gap:4px;font:600 12px Inter,sans-serif;color:var(--muted)}
+  .offer label.wide{grid-column:1/-1}
+  .offer input,.offer select{background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font:500 14px Inter,sans-serif;min-width:0}
+  .offer .row{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .offer .row .grow{flex:1}
+  .switch{display:flex!important;flex-direction:row!important;align-items:center;gap:8px;color:var(--text)!important;font:600 14px Inter,sans-serif!important;cursor:pointer}
+  .switch input{width:18px;height:18px;accent-color:var(--accent)}
+  .preview{grid-column:1/-1;display:flex;gap:12px;align-items:center;background:#0c111b;border:1px solid #1f2836;border-radius:10px;padding:10px 12px}
+  .preview .t{color:#c6ff3d;font:700 14px Inter,sans-serif}
+  .preview .s{color:#a3adc2;font:400 12px Inter,sans-serif}
+  .preview .b{margin-left:auto;background:#c6ff3d;color:#07090f;border-radius:999px;padding:6px 12px;font:700 12px Inter,sans-serif;white-space:nowrap}
+  .preview .ad{margin-left:auto;border:1px solid #2a3245;color:#a3adc2;border-radius:4px;padding:1px 6px;font:600 10px Inter,sans-serif}
+  .taps{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+  .small{border:1px solid var(--line);background:transparent;color:var(--text);border-radius:10px;padding:9px 14px;font:600 13px Inter,sans-serif;cursor:pointer}
+  .small.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .small.danger{color:var(--red);border-color:var(--red-line)}
   [hidden]{display:none!important}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
   @media (max-width:560px){ .bar{margin-left:0} .save{flex:1 1 100%} }
@@ -111,9 +136,13 @@
 
 <div class="wrap" id="app" hidden>
   <header>
-    <h1>Clip Review</h1>
+    <h1 id="pageTitle">Clip Review</h1>
+    <nav class="tabs" aria-label="Sections">
+      <button class="tab" data-tab="clips" aria-pressed="true">Clips</button>
+      <button class="tab" data-tab="offers" aria-pressed="false">Offers</button>
+    </nav>
     <span class="left" id="left"></span>
-    <div class="bar">
+    <div class="bar" id="clipBar">
       <button class="chip" data-fmt="all" aria-pressed="true">All</button>
       <button class="chip" data-fmt="landscape" aria-pressed="false">Landscape</button>
       <button class="chip" data-fmt="vertical" aria-pressed="false">Portrait</button>
@@ -123,10 +152,18 @@
       <button class="chip" id="signout">Forget PIN</button>
     </div>
   </header>
+  <section id="offersView" hidden>
+    <p class="help">These are the ads in the app. Each place can have several offers: a club-specific one beats the general one, and so do home/away, match-day and league ones. An offer only shows when it's switched <b>On</b>, and a place with no offer switched on is hidden in the app. Changes reach fans the next time they open the app.<br>
+    Text can use <kbd>{team}</kbd> the fan's team, <kbd>{opponent}</kbd>, <kbd>{venue}</kbd>, <kbd>{home}</kbd> <kbd>{away}</kbd>, <kbd>{side}</kbd> home/away, <kbd>{when}</kbd> Today or the day, <kbd>{weekday}</kbd>, <kbd>{night}</kbd> tonight or e.g. Sat night. The preview fills them in for Leeds Utd v Tottenham (an away game for a Spurs fan, Saturday).</p>
+    <div class="status" id="offStatus"></div>
+    <div id="offList"></div>
+  </section>
+  <div id="clipsView">
   <p class="help">Every clip starts as Approve. Change any you don't want using the menu under each clip, or press its number key (<kbd>1</kbd>–<kbd>9</kbd>, and <kbd>0</kbd> for clip 10) to flip it between Approve and Reject. Pick <b>Skip for now</b> to leave a clip in the review list for later. Tap a title to open the video in a new tab. Press <kbd>Enter</kbd> to save the batch.</p>
   <section class="rules" id="rulesPanel" hidden></section>
   <div class="status" id="status"></div>
   <div class="grid" id="grid"></div>
+  </div>
 </div>
 
 <div class="savebar" id="savebar" hidden>
@@ -368,7 +405,7 @@ $("#allRej").addEventListener("click", () => {
 });
 
 document.addEventListener("keydown", e => {
-  if ($("#app").hidden || /^(INPUT|SELECT)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+  if ($("#app").hidden || !$("#offersView").hidden || /^(INPUT|SELECT)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
   const m = /^Digit([0-9])$/.exec(e.code) || /^Numpad([0-9])$/.exec(e.code);
   if (m){ const i = m[1] === "0" ? 9 : Number(m[1]) - 1; const b = batch[i]; if (b) choose(i, CH[b.v].reject ? "approve" : "bad"); e.preventDefault(); }
   else if (e.key === "Enter"){ save(); e.preventDefault(); }
@@ -486,7 +523,144 @@ function destroyPlayers(){
 window.onYouTubeIframeAPIReady = () => { ytReady = true; const q = ytQueue; ytQueue = []; q.forEach(i => batch[i] && mountPlayer(i)); };
 (() => { const s = document.createElement("script"); s.src = "https://www.youtube.com/iframe_api"; document.head.appendChild(s); })();
 
-start();
+/* ---------- Offers tab: the app's affiliate ads (table offers, PIN-protected offers_admin_* functions) ---------- */
+const SLOTS = [
+  { k: "deals_card",        name: "Deals card",                      where: "In the feed between matches: the countdown and shirt ad. Uses the title, small text, button and link.", button: true },
+  { k: "score_card",        name: "No-highlights card",              where: "Under the score on a match with no clip. {home} and {away} are that match's teams." },
+  { k: "score_card_abroad", name: "Plays-in-another-country card",   where: "Under the score when the clip only plays in other countries." },
+  { k: "tile_tickets",      name: "Footer tile: tickets",            where: "Bottom bar, first tile on away games, on match day and on home games outside match week." },
+  { k: "tile_hotel",        name: "Footer tile: hotel",              where: "Bottom bar, middle tile (not on home games outside match week)." },
+  { k: "tile_kit",          name: "Footer tile: kit",                where: "Bottom bar, kit tile. Add a 'Playing now' one for during the match." },
+  { k: "tile_kit_next",     name: "Footer tile: next kit (during the match)", where: "Bottom bar, third tile while the match is being played." },
+  { k: "tile_hospitality",  name: "Footer tile: hospitality",        where: "Bottom bar, first tile when there's a home game in the next 7 days." },
+  { k: "tile_tour",         name: "Footer tile: stadium tour",       where: "Bottom bar, third tile on home games outside match week." },
+];
+const SAMPLE = { team: "Tottenham", opponent: "Leeds Utd", venue: "Elland Road", home: "Leeds Utd", away: "Tottenham", side: "away", when: "Saturday", weekday: "Saturday", night: "Sat night" };
+let offers = [], offerClubs = [], offersLoaded = false;
+
+const fillSample = s => String(s || "").replace(/\{(\w+)\}/g, (m, k) => SAMPLE[k] ?? m);
+function setOffStatus(msg, isErr){ const el = $("#offStatus"); el.textContent = msg || ""; el.classList.toggle("err", !!isErr); }
+
+function showTab(t){
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-pressed", b.dataset.tab === t));
+  const off = t === "offers";
+  $("#offersView").hidden = !off; $("#clipsView").hidden = off; $("#clipBar").hidden = off; $("#left").hidden = off;
+  $("#savebar").hidden = off; $("#pageTitle").textContent = off ? "Offers" : "Clip Review";
+  store.set("lmr_review_tab", t);
+  if (off && !offersLoaded) loadOffers();
+}
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+async function loadOffers(){
+  setOffStatus("Loading offers…");
+  try {
+    const j = await rpc("offers_admin_list");
+    offers = j.offers || []; offerClubs = j.clubs || []; offersLoaded = true;
+    setOffStatus(""); renderOffers();
+  } catch(e){
+    if (e.pin) { store.set("lmr_review_pin", null); return showPin(e.message); }
+    setOffStatus("Couldn't load offers: " + e.message, true);
+  }
+}
+
+function sel(name, value, opts){
+  return `<select data-f="${name}">` + opts.map(([v, l]) => `<option value="${esc(v)}"${String(v) === String(value ?? "") ? " selected" : ""}>${esc(l)}</option>`).join("") + `</select>`;
+}
+
+function offerCard(o, slot){
+  const clubOpts = [["", "Every club"]].concat(offerClubs.map(c => [c.id, c.name + (c.league ? " · " + c.league : "")]));
+  const isTile = slot.k.startsWith("tile_");
+  return `<div class="offer${o.active ? "" : " off"}" data-id="${o.id ?? ""}" data-slot="${slot.k}">
+    <label class="switch wide"><input type="checkbox" data-f="active"${o.active ? " checked" : ""}> ${o.active ? "On: showing in the app" : "Off: hidden in the app"}</label>
+    <label>Club ${sel("club_id", o.club_id, clubOpts)}</label>
+    <label>Home or away ${sel("side", o.side || "any", [["any","Any"],["home","Home games"],["away","Away games"]])}</label>
+    <label>When ${sel("state", o.state || "any", [["any","Any time"],["today","Match day"],["playing","Playing now"]])}</label>
+    <label>League (optional) <input data-f="competition" value="${esc(o.competition)}" placeholder="e.g. Premier League"></label>
+    <label class="wide">Title <input data-f="title" value="${esc(o.title)}" maxlength="80" required></label>
+    <label class="wide">Small text <input data-f="subtitle" value="${esc(o.subtitle)}" maxlength="120"></label>
+    ${slot.button ? `<label>Button text <input data-f="button" value="${esc(o.button)}" maxlength="30" placeholder="Shop the kit"></label>` : ""}
+    <label class="wide">Affiliate link <input data-f="link" type="url" value="${esc(o.link)}" placeholder="https://… (empty: tapping says links are coming soon)"></label>
+    <label>Partner name <input data-f="partner" value="${esc(o.partner)}" maxlength="60" placeholder="e.g. Booking.com"></label>
+    <div class="preview" aria-label="Preview">
+      <div><div class="t">${esc(fillSample(o.title) || "Title")}</div><div class="s">${esc(fillSample(o.subtitle))}</div></div>
+      ${slot.button && o.button ? `<span class="b">${esc(o.button)}</span>` : (isTile ? `<span class="ad">Ad</span>` : "")}
+    </div>
+    <div class="row">
+      <span class="taps">${o.id ? (o.taps || 0) + " taps" : "New offer"}${o.link ? "" : " · no link yet"}</span>
+      <span class="grow"></span>
+      ${o.id ? `<button class="small danger" type="button" data-act="delete">Delete</button>` : `<button class="small" type="button" data-act="cancel">Cancel</button>`}
+      <button class="small primary" type="button" data-act="save">Save</button>
+    </div>
+  </div>`;
+}
+
+function renderOffers(){
+  $("#offList").innerHTML = SLOTS.map(s => {
+    const list = offers.filter(o => o.slot === s.k);
+    return `<section class="slot" data-slot="${s.k}"><h2>${esc(s.name)}</h2><p>${esc(s.where)}</p>
+      ${list.map(o => offerCard(o, s)).join("") || `<p>No offers here, so this place is hidden in the app.</p>`}
+      <button class="small" type="button" data-act="add" data-slot="${s.k}">+ Add offer</button></section>`;
+  }).join("");
+}
+
+function readCard(card){
+  const o = { id: card.dataset.id || null, slot: card.dataset.slot };
+  card.querySelectorAll("[data-f]").forEach(el => { o[el.dataset.f] = el.type === "checkbox" ? el.checked : el.value; });
+  return o;
+}
+
+// live preview while typing
+$("#offList").addEventListener("input", e => {
+  const card = e.target.closest(".offer"); if (!card) return;
+  const o = readCard(card), slot = SLOTS.find(s => s.k === o.slot);
+  card.querySelector(".preview .t").textContent = fillSample(o.title) || "Title";
+  card.querySelector(".preview .s").textContent = fillSample(o.subtitle);
+  const b = card.querySelector(".preview .b"); if (b) b.textContent = o.button || "";
+  if (e.target.dataset.f === "active") {
+    card.classList.toggle("off", !o.active);
+    e.target.parentElement.lastChild.textContent = o.active ? " On: showing in the app" : " Off: hidden in the app";
+  }
+});
+
+$("#offList").addEventListener("click", async e => {
+  const btn = e.target.closest("button[data-act]"); if (!btn) return;
+  const act = btn.dataset.act;
+  if (act === "add") {
+    const slot = SLOTS.find(s => s.k === btn.dataset.slot);
+    btn.insertAdjacentHTML("beforebegin", offerCard({ active: true, side: "any", state: "any" }, slot));
+    btn.previousElementSibling.querySelector('[data-f="title"]').focus();
+    return;
+  }
+  const card = btn.closest(".offer"); if (!card) return;
+  if (act === "cancel") { card.remove(); return; }
+  if (act === "delete") {
+    if (!confirm("Delete this offer? This can't be undone.")) return;
+    btn.disabled = true;
+    try {
+      await rpc("offers_admin_delete", { p_id: Number(card.dataset.id) });
+      offers = offers.filter(o => String(o.id) !== card.dataset.id); renderOffers(); setOffStatus("Offer deleted.");
+    } catch(err){ btn.disabled = false; setOffStatus("Couldn't delete: " + err.message, true); }
+    return;
+  }
+  if (act === "save") {
+    const o = readCard(card);
+    if (!o.title.trim()) { setOffStatus("Every offer needs a title.", true); return; }
+    if (o.link && !/^https:\/\/\S+$/i.test(o.link.trim())) { setOffStatus("Links must start with https:// and have no spaces.", true); return; }
+    btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      const j = await rpc("offers_admin_save", { p_offer: o });
+      const saved = j.offer;
+      offers = offers.filter(x => x.id !== saved.id).concat([saved]);
+      renderOffers(); setOffStatus("Saved. Fans see it the next time they open the app.");
+    } catch(err){
+      btn.disabled = false; btn.textContent = "Save";
+      if (err.pin) { store.set("lmr_review_pin", null); return showPin(err.message); }
+      setOffStatus("Couldn't save: " + err.message, true);
+    }
+  }
+});
+
+start().then(() => { if (store.get("lmr_review_tab") === "offers" && !$("#app").hidden) showTab("offers"); });
 </script>
 </body>
 </html>
