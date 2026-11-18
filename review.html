@@ -153,7 +153,7 @@
     </div>
   </header>
   <section id="offersView" hidden>
-    <p class="help">These are the ads in the app. Each place can have several offers: a club-specific one beats the general one, and so do home/away, match-day and league ones. An offer only shows when it's switched <b>On</b>, and a place with no offer switched on is hidden in the app. Changes reach fans the next time they open the app.<br>
+    <p class="help">These are the ads in the app. Each place can have several offers: a club-specific one beats the general one, and so do home/away, match-day and league ones. An offer only shows when it's switched <b>On</b>, and a place is never left empty: with none of its own switched on, it borrows another live ad (footer tiles from the other tiles, the deals card and score-card ad from the kit ads), and if there's none at all the app shows its own built-in ad with no link. Changes reach fans the next time they open the app.<br>
     Text can use <kbd>{team}</kbd> the fan's team, <kbd>{opponent}</kbd>, <kbd>{venue}</kbd>, <kbd>{home}</kbd> <kbd>{away}</kbd>, <kbd>{side}</kbd> home/away, <kbd>{when}</kbd> Today or the day, <kbd>{weekday}</kbd>, <kbd>{night}</kbd> tonight or e.g. Sat night. The preview fills them in for Leeds Utd v Tottenham (an away game for a Spurs fan, Saturday).</p>
     <div class="status" id="offStatus"></div>
     <div id="offList"></div>
@@ -571,7 +571,7 @@ function offerCard(o, slot){
   const clubOpts = [["", "Every club"]].concat(offerClubs.map(c => [c.id, c.name + (c.league ? " · " + c.league : "")]));
   const isTile = slot.k.startsWith("tile_");
   return `<div class="offer${o.active ? "" : " off"}" data-id="${o.id ?? ""}" data-slot="${slot.k}">
-    <label class="switch wide"><input type="checkbox" data-f="active"${o.active ? " checked" : ""}> ${o.active ? "On: showing in the app" : "Off: hidden in the app"}</label>
+    <label class="switch wide"><input type="checkbox" data-f="active"${o.active ? " checked" : ""}> ${o.active ? "On: showing in the app" : "Off: not shown in the app"}</label>
     <label>Club ${sel("club_id", o.club_id, clubOpts)}</label>
     <label>Home or away ${sel("side", o.side || "any", [["any","Any"],["home","Home games"],["away","Away games"]])}</label>
     <label>When ${sel("state", o.state || "any", [["any","Any time"],["today","Match day"],["playing","Playing now"]])}</label>
@@ -598,7 +598,7 @@ function renderOffers(){
   $("#offList").innerHTML = SLOTS.map(s => {
     const list = offers.filter(o => o.slot === s.k);
     return `<section class="slot" data-slot="${s.k}"><h2>${esc(s.name)}</h2><p>${esc(s.where)}</p>
-      ${list.map(o => offerCard(o, s)).join("") || `<p>No offers here, so this place is hidden in the app.</p>`}
+      ${list.map(o => offerCard(o, s)).join("") || `<p>No offers here, so this place borrows another live ad in the app.</p>`}
       <button class="small" type="button" data-act="add" data-slot="${s.k}">+ Add offer</button></section>`;
   }).join("");
 }
@@ -618,7 +618,7 @@ $("#offList").addEventListener("input", e => {
   const b = card.querySelector(".preview .b"); if (b) b.textContent = o.button || "";
   if (e.target.dataset.f === "active") {
     card.classList.toggle("off", !o.active);
-    e.target.parentElement.lastChild.textContent = o.active ? " On: showing in the app" : " Off: hidden in the app";
+    e.target.parentElement.lastChild.textContent = o.active ? " On: showing in the app" : " Off: not shown in the app";
   }
 });
 
