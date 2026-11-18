@@ -29,6 +29,29 @@
   .chip{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:999px;padding:7px 13px;font:500 13px Inter,sans-serif;cursor:pointer}
   .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
   .help{color:var(--muted);font-size:13px;margin:0 0 14px;line-height:1.5}
+  .stbar{margin:0 0 14px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:0 0 18px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .kpi b{display:block;font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .kpi span{color:var(--muted);font-size:12px}
+  .stgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:14px}
+  .stcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .stcard h3{margin:0 0 4px;font-size:15px}
+  .stcard p.sub{margin:0 0 10px;color:var(--muted);font-size:12px}
+  .bars{display:flex;align-items:flex-end;gap:2px;height:120px;border-bottom:1px solid var(--line)}
+  .bars i{flex:1;background:var(--accent);border-radius:2px 2px 0 0;min-height:1px;opacity:.85}
+  .bars i:hover{opacity:1}
+  .axis{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:4px}
+  .hrow{display:grid;grid-template-columns:minmax(0,9em) 1fr 3.5em;gap:8px;align-items:center;font-size:13px;margin:5px 0}
+  .hrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hrow .tr{background:var(--panel2);border-radius:4px;height:10px;overflow:hidden}
+  .hrow .tr i{display:block;height:100%;background:var(--accent)}
+  .hrow .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .sttable{width:100%;border-collapse:collapse;font-size:13px}
+  .sttable td,.sttable th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+  .sttable th{color:var(--muted);font-weight:500}
+  .sttable td.n,.sttable th.n{text-align:right;font-variant-numeric:tabular-nums}
+  .empty{color:var(--muted);font-size:13px}
   kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:0 5px;font:600 12px Inter,sans-serif;color:var(--text)}
   .status{color:var(--muted);font-size:14px;margin:0 0 12px;min-height:18px}
   .err{color:var(--amber)}
@@ -140,6 +163,7 @@
     <nav class="tabs" aria-label="Sections">
       <button class="tab" data-tab="clips" aria-pressed="true">Clips</button>
       <button class="tab" data-tab="offers" aria-pressed="false">Offers</button>
+      <button class="tab" data-tab="stats" aria-pressed="false">Stats</button>
     </nav>
     <span class="left" id="left"></span>
     <div class="bar" id="clipBar">
@@ -157,6 +181,17 @@
     Text can use <kbd>{team}</kbd> the fan's team, <kbd>{opponent}</kbd>, <kbd>{venue}</kbd>, <kbd>{home}</kbd> <kbd>{away}</kbd>, <kbd>{side}</kbd> home/away, <kbd>{when}</kbd> Today or the day, <kbd>{weekday}</kbd>, <kbd>{night}</kbd> tonight or e.g. Sat night. The preview fills them in for Leeds Utd v Tottenham (an away game for a Spurs fan, Saturday).</p>
     <div class="status" id="offStatus"></div>
     <div id="offList"></div>
+  </section>
+  <section id="statsView" hidden>
+    <p class="help">Anonymous counts from the app: no names, accounts or device IDs. A "fan" is one phone that opened the app that day (or week, or month). Downloads, uninstalls, ratings and crashes are in Google Play Console. UK dates.</p>
+    <div class="bar stbar">
+      <button class="chip" data-days="7" aria-pressed="false">7 days</button>
+      <button class="chip" data-days="28" aria-pressed="true">28 days</button>
+      <button class="chip" data-days="90" aria-pressed="false">90 days</button>
+      <button class="chip" id="stRefresh">Refresh</button>
+    </div>
+    <div class="status" id="stStatus"></div>
+    <div id="stBody"></div>
   </section>
   <div id="clipsView">
   <p class="help">Every clip starts as Approve. Change any you don't want using the menu under each clip, or press its number key (<kbd>1</kbd>–<kbd>9</kbd>, and <kbd>0</kbd> for clip 10) to flip it between Approve and Reject. Pick <b>Skip for now</b> to leave a clip in the review list for later. Tap a title to open the video in a new tab. Press <kbd>Enter</kbd> to save the batch.</p>
@@ -405,7 +440,7 @@ $("#allRej").addEventListener("click", () => {
 });
 
 document.addEventListener("keydown", e => {
-  if ($("#app").hidden || !$("#offersView").hidden || /^(INPUT|SELECT)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+  if ($("#app").hidden || !$("#offersView").hidden || !$("#statsView").hidden || /^(INPUT|SELECT)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
   const m = /^Digit([0-9])$/.exec(e.code) || /^Numpad([0-9])$/.exec(e.code);
   if (m){ const i = m[1] === "0" ? 9 : Number(m[1]) - 1; const b = batch[i]; if (b) choose(i, CH[b.v].reject ? "approve" : "bad"); e.preventDefault(); }
   else if (e.key === "Enter"){ save(); e.preventDefault(); }
@@ -543,11 +578,80 @@ function setOffStatus(msg, isErr){ const el = $("#offStatus"); el.textContent = 
 
 function showTab(t){
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-pressed", b.dataset.tab === t));
-  const off = t === "offers";
-  $("#offersView").hidden = !off; $("#clipsView").hidden = off; $("#clipBar").hidden = off; $("#left").hidden = off;
-  $("#savebar").hidden = off; $("#pageTitle").textContent = off ? "Offers" : "Clip Review";
+  const off = t === "offers", st = t === "stats", isClips = !off && !st;
+  $("#offersView").hidden = !off; $("#statsView").hidden = !st;
+  $("#clipsView").hidden = !isClips; $("#clipBar").hidden = !isClips; $("#left").hidden = !isClips;
+  $("#savebar").hidden = !isClips; $("#pageTitle").textContent = off ? "Offers" : st ? "Stats" : "Clip Review";
   store.set("lmr_review_tab", t);
   if (off && !offersLoaded) loadOffers();
+  if (st && !statsLoaded) loadStats();
+}
+
+// ---------- Stats tab: anonymous app counts (stats_admin) ----------
+let statsLoaded = false, statDays = 28;
+const fmtN = n => Number(n || 0).toLocaleString("en-GB");
+const shortDay = d => new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+function setStStatus(msg, isErr){ const el = $("#stStatus"); el.textContent = msg || ""; el.classList.toggle("err", !!isErr); }
+document.querySelectorAll("[data-days]").forEach(b => b.addEventListener("click", () => {
+  statDays = Number(b.dataset.days);
+  document.querySelectorAll("[data-days]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  loadStats();
+}));
+$("#stRefresh").addEventListener("click", () => loadStats());
+
+async function loadStats(){
+  setStStatus("Loading stats…");
+  try {
+    const j = await rpc("stats_admin", { p_days: statDays });
+    statsLoaded = true; setStStatus(""); renderStats(j);
+  } catch(e){
+    if (e.pin) { store.set("lmr_review_pin", null); return showPin(e.message); }
+    setStStatus("Couldn't load stats: " + e.message, true);
+  }
+}
+
+function barChart(rows, key, label){
+  const max = Math.max(1, ...rows.map(r => r[key] || 0));
+  const total = rows.reduce((s, r) => s + (r[key] || 0), 0);
+  const sub = key === "fans" ? `${fmtN(Math.round(total / Math.max(1, rows.length)))} a day on average` : `${fmtN(total)} in ${rows.length} days`;
+  return `<div class="stcard"><h3>${label}</h3><p class="sub">${sub}</p>
+    <div class="bars">${rows.map(r => `<i style="height:${(r[key] || 0) / max * 100}%" title="${shortDay(r.day)}: ${fmtN(r[key])}"></i>`).join("")}</div>
+    <div class="axis"><span>${rows.length ? shortDay(rows[0].day) : ""}</span><span>${rows.length ? shortDay(rows[rows.length - 1].day) : ""}</span></div></div>`;
+}
+function hBars(title, sub, items){
+  if (!items.length) return `<div class="stcard"><h3>${title}</h3><p class="sub">${sub}</p><p class="empty">Nothing yet.</p></div>`;
+  const max = Math.max(1, ...items.map(i => i.n));
+  return `<div class="stcard"><h3>${title}</h3><p class="sub">${sub}</p>${items.map(i =>
+    `<div class="hrow"><span class="nm" title="${esc(i.name)}">${esc(i.name)}</span><span class="tr"><i style="width:${i.n / max * 100}%"></i></span><span class="n">${fmtN(i.n)}</span></div>`).join("")}</div>`;
+}
+
+function renderStats(j){
+  const t = j.totals || {}, daily = j.daily || [];
+  const today = daily[daily.length - 1] || {};
+  const kpi = (n, l) => `<div class="kpi"><b>${fmtN(n)}</b><span>${l}</span></div>`;
+  const promptRate = t.prompt_shown ? Math.round(t.prompt_yes / t.prompt_shown * 100) + "%" : "–";
+  const depth = (j.depth || []).map(d => ({ name: d.card >= 10 ? "Card 10+" : "Card " + d.card, n: d.views }));
+  const offers = (j.offers || []).filter(o => o.taps || o.all_time || o.active);
+  $("#stBody").innerHTML = `
+    <div class="kpis">
+      ${kpi(today.fans, "Fans today")}${kpi(t.fans_this_week, "Fans in the last 7 days")}${kpi(t.fans_this_month, "Fans in the last 30 days")}
+      ${kpi(t.new, "New installs opened")}${kpi(t.opens, "App opens")}${kpi(t.cards, "Match cards viewed")}
+      ${kpi(t.caught_up, "Reached “all caught up”")}${kpi(t.taps, "Ad taps")}
+      ${kpi(t.reminder_on, "Reminders turned on")}${kpi(t.reminder_off, "Reminders turned off")}
+      <div class="kpi"><b>${promptRate}</b><span>Said yes to the reminder prompt (${fmtN(t.prompt_yes)} of ${fmtN(t.prompt_shown)})</span></div>
+    </div>
+    <div class="stgrid">
+      ${barChart(daily, "fans", "Fans per day")}
+      ${barChart(daily, "opens", "App opens per day")}
+      ${barChart(daily, "new", "New installs per day")}
+      ${barChart(daily, "taps", "Ad taps per day")}
+      ${hBars("Most viewed teams", "Feeds opened per team; first-open picks count too", (j.teams || []).map(x => ({ name: x.name, n: x.views })))}
+      ${hBars("How far fans swipe", "Views of each match card (1 = the latest meeting). A big drop shows where fans stop", depth)}
+      <div class="stcard"><h3>Ad taps by offer</h3><p class="sub">In this period, and all time</p>
+        ${offers.length ? `<table class="sttable"><tr><th>Offer</th><th>Place</th><th class="n">Taps</th><th class="n">All time</th></tr>
+        ${offers.map(o => `<tr><td>${esc(o.title)}${o.active ? "" : " <span class='empty'>(off)</span>"}</td><td>${esc(o.slot.replace(/_/g, " "))}</td><td class="n">${fmtN(o.taps)}</td><td class="n">${fmtN(o.all_time)}</td></tr>`).join("")}</table>`
+        : `<p class="empty">Nothing yet.</p>`}</div>
+    </div>`;
 }
 document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
 
@@ -660,7 +764,7 @@ $("#offList").addEventListener("click", async e => {
   }
 });
 
-start().then(() => { if (store.get("lmr_review_tab") === "offers" && !$("#app").hidden) showTab("offers"); });
+start().then(() => { const t = store.get("lmr_review_tab"); if ((t === "offers" || t === "stats") && !$("#app").hidden) showTab(t); });
 </script>
 </body>
 </html>
