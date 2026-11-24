@@ -233,7 +233,7 @@
     <div id="stBody"></div>
   </section>
   <section id="checkView" hidden>
-    <p class="help">What a fan in the United Kingdom will see for upcoming games, straight from the live feed. Pick which games ahead to check: <b>2nd &amp; 3rd</b> skips each club's next game. Each fixture shows its five meetings in feed order and the clip that plays first. <b>Watch</b> opens the clip in a new tab. <b>Take off</b> removes a live clip from that match, and its next backup plays instead (or the match shows no clip).</p>
+    <p class="help">What a fan in the United Kingdom will see in the app for upcoming games. This tab is about clips that are <b>already live</b>; the <b>Clips</b> tab is for new clips waiting for your decision. Pick which games ahead to check: <b>2nd &amp; 3rd</b> skips each club's next game. Each fixture shows its five meetings in feed order and the clip that plays first. <b>Watch</b> opens the clip in a new tab. <b>Take off</b> removes a live clip from that match, and its next backup plays instead (or the match shows no clip). The check runs by itself every 15 minutes.</p>
     <div class="bar ckbar">
       <button class="chip" data-range="1-1" aria-pressed="false">Next game</button>
       <button class="chip" data-range="2-3" aria-pressed="true">2nd &amp; 3rd</button>
@@ -243,7 +243,7 @@
       <button class="chip" data-show="gaps" aria-pressed="false">Has gaps</button>
       <button class="chip" data-show="flags" aria-pressed="false">Has flags</button>
       <input type="search" id="ckQ" placeholder="Search a club" aria-label="Search a club">
-      <button class="chip" id="ckRefresh">Refresh</button>
+      <button class="chip" id="ckRefresh">Reload</button>
       <span class="ckcount" id="ckCount"></span>
     </div>
     <div class="status" id="ckStatus"></div>
@@ -846,7 +846,7 @@ function ckFlags(m, vidCount){
   return f;
 }
 async function loadCheck(){
-  setCkStatus("Checking upcoming games… this takes a few seconds.");
+  setCkStatus("Loading…"); $("#ckBody").innerHTML = ""; $("#ckCount").textContent = "";
   const [a, b] = ckRange.split("-").map(Number);
   try {
     const j = await rpc("clip_check_admin", { p_from: a, p_to: b });
@@ -857,7 +857,7 @@ async function loadCheck(){
     const comps = [...new Set(ckData.map(f => f.comp))].sort();
     const cur = $("#ckComp").value;
     $("#ckComp").innerHTML = '<option value="">All competitions</option>' + comps.map(c => `<option${c === cur ? " selected" : ""}>${esc(c)}</option>`).join("");
-    setCkStatus("Checked " + new Date(j.checked_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + ".");
+    setCkStatus("Last checked " + new Date(j.checked_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + " (it checks again every 15 minutes).");
     renderCheck();
   } catch(e){
     if (e.pin) { store.set("lmr_review_pin", null); return showPin(e.message); }
@@ -906,11 +906,11 @@ function renderCheck(){
   const days = {}; list.forEach(f => (days[f.ko.slice(0, 10)] ||= []).push(f));
   $("#ckBody").innerHTML = `
     <div class="kpis">${kpi(ckData.length, "Fixtures checked")}${kpi(pct(withClip.length, all.length) + "%", `Meetings with a clip (${withClip.length} of ${all.length})`)}
-      ${kpi(pct(off.length, withClip.length) + "%", "Clips from official accounts")}${kpi(bad.length, "Clips worth a second look")}</div>
+      ${kpi(pct(off.length, withClip.length) + "%", "Clips from official accounts")}${kpi(bad.length, "Live clips to double-check")}</div>
     <div class="stcard cksec"><h3>Coverage by competition</h3><p class="sub">Share of meetings with a clip that plays in the UK</p>
       <div class="ckwrap"><table class="sttable"><tr><th>Competition</th><th class="n">Fixtures</th><th class="n">All 5 clips</th><th class="n">Meetings with a clip</th><th style="width:30%"></th></tr>
       ${rows.map(([n, c]) => `<tr><td>${esc(n)}</td><td class="n">${c.fx}</td><td class="n">${c.full}</td><td class="n">${c.clip} of ${c.n} · ${pct(c.clip, c.n)}%</td><td><div class="cktrack"><i style="width:${pct(c.clip, c.n)}%"></i></div></td></tr>`).join("")}</table></div></div>
-    <div class="stcard cksec" style="padding:0"><div style="padding:14px 14px 4px"><h3>Worth a second look</h3><p class="sub">Live clips that may not be right. Red means probably wrong.</p></div>
+    <div class="stcard cksec" style="padding:0"><div style="padding:14px 14px 4px"><h3>Live clips to double-check</h3><p class="sub">These clips are already approved and showing in the app, but an automatic check thinks they may not be right (for example a friendly, a fan upload, or one video used for two matches). Red means probably wrong. Take off any you don't want.</p></div>
       ${issues.length ? issues.map(m => `<div class="ckissue"><div class="body" style="display:flex;flex-direction:column;gap:4px;min-width:0">
         <span class="res" style="font-weight:600;font-size:14px">${esc(m.home)} ${esc(m.score)} ${esc(m.away)} <span class="t">· ${esc(m.comp)} · ${ckDate(m.date)}</span></span>
         <span class="t">${esc(m.clip.title)} · ${esc(m.clip.ch)} · ${dur(m.clip.dur)}${m.clip.dbid ? " · id " + m.clip.dbid : ""}</span>
@@ -935,8 +935,10 @@ $("#ckBody").addEventListener("change", async e => {
   const reason = s.value; s.disabled = true;
   try {
     const j = await rpc("clip_check_reject", { p_id: Number(s.dataset.takeoff), p_reason: reason });
-    showToastPlain(j.rejected ? "Clip taken off (" + reason.toLowerCase() + "). Refreshing…" : "That clip was already off.");
-    loadCheck();
+    const id = Number(s.dataset.takeoff);
+    ckData.forEach(f => f.meetings.forEach(m => { if (m.clip && m.clip.dbid === id) { m.clip = null; m.flags = [["", "Taken off: its backup shows here at the next check"]]; } }));
+    renderCheck();
+    showToastPlain(j.rejected ? "Clip taken off. Fans get its backup clip within a minute." : "That clip was already off.");
   } catch(err){
     s.disabled = false; s.value = "";
     if (err.pin) { store.set("lmr_review_pin", null); return showPin(err.message); }
