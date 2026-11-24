@@ -143,6 +143,14 @@
   .small.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
   .small.danger{color:var(--red);border-color:var(--red-line)}
   /* Clip Check tab: what fans will see for upcoming games */
+  .brand{display:inline-flex;align-items:center;color:var(--text);padding-right:12px;margin-right:2px;border-right:1px solid var(--line)}
+  .brand .logo{height:24px;width:auto;display:block}
+  .bubble{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:var(--panel2);color:var(--text);font:700 11px Inter,sans-serif;font-variant-numeric:tabular-nums;vertical-align:1px}
+  .tab[aria-pressed="true"] .bubble{background:var(--accent-ink);color:var(--accent)}
+  .ckmiss{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 12px;padding:10px 14px;border-top:1px solid var(--line);align-items:center;cursor:pointer}
+  .ckmiss input{width:18px;height:18px;accent-color:var(--accent)}
+  .ckmiss .t{color:var(--muted);font-size:12px;word-break:break-word}
+  .chip:disabled{opacity:.5;cursor:default}
   .ckbar{margin:0 0 14px}
   .ckbar select,.ckbar input{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:7px 13px;font:500 13px Inter,sans-serif;min-width:0}
   .ckbar input{flex:1 1 160px}
@@ -179,6 +187,7 @@
   .ckissue:last-child{border-bottom:0}
   .ckissue .t{color:var(--muted);font-size:12px;word-break:break-word}
   .cknote{color:var(--muted);font-size:13px;padding:12px 14px}
+  @media (max-width:560px){ .ckmiss{grid-template-columns:auto minmax(0,1fr)} .ckmiss button{grid-column:2;justify-self:start} .brand .logo{height:20px} }
   @media (max-width:560px){ .ckm{grid-template-columns:minmax(0,1fr) auto} .ckm .when{grid-column:1/-1;flex-direction:row;gap:8px} }
   [hidden]{display:none!important}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -197,12 +206,13 @@
 
 <div class="wrap" id="app" hidden>
   <header>
+    <a class="brand" href="./review.html" aria-label="Last Match Recap"><svg class="logo" viewBox="0 0 424 88" role="img" aria-label="Last Match Recap"><g transform="translate(-64 -26)"><path fill="currentColor" stroke="currentColor" stroke-width="10" stroke-linejoin="round" d="M152 36 L152 104 L112 70 Z"/><path fill="currentColor" stroke="currentColor" stroke-width="10" stroke-linejoin="round" d="M114 36 L114 104 L74 70 Z"/><path fill="currentColor" d="M175.53 77 180.93 32.1Q180.99 31.64 181.29 31.37Q181.58 31.1 181.98 31.1H192.12Q192.52 31.1 192.75 31.37Q192.98 31.64 192.91 32.1L188.76 66.88Q188.63 67.21 189.03 67.21H201.54Q202 67.21 202.23 67.48Q202.46 67.75 202.39 68.22L201.34 77Q201.14 78 200.22 78H176.32Q175.92 78 175.69 77.73Q175.46 77.46 175.53 77Z M223.13 77.06 223 71.97Q223.07 71.84 222.94 71.74Q222.81 71.64 222.67 71.64H216.94Q216.62 71.64 216.48 71.97L215.23 77.06Q215.04 78 214.11 78H204.1Q203.12 78 203.38 76.93L217.87 31.97Q218.13 31.1 219.05 31.1H230.71Q231.63 31.1 231.69 31.97L235.32 76.93V77.06Q235.32 78 234.33 78H223.99Q223.07 78 223.13 77.06ZM219.38 61.99H222.48Q222.67 61.99 222.81 61.65L222.54 49.26Q222.54 48.99 222.38 49.02Q222.21 49.06 222.21 49.26L219.18 61.65Q219.05 61.99 219.38 61.99Z M238.87 67.61Q238.87 67.15 239 65.94L239.27 63.86Q239.33 63.39 239.63 63.13Q239.93 62.86 240.32 62.86H250.33Q250.72 62.86 250.95 63.13Q251.19 63.39 251.12 63.86L250.99 65.34Q250.86 66.41 251.25 67.08Q251.65 67.75 252.44 67.75Q253.29 67.75 253.88 67.01Q254.48 66.28 254.48 65.2Q254.48 64.2 253.52 63.13Q252.57 62.05 249.87 59.84Q247.23 57.63 245.52 55.92Q243.81 54.22 242.56 51.7Q241.31 49.19 241.31 45.97Q241.31 45.37 241.44 43.9Q242.16 37.93 246.31 34.25Q250.46 30.56 256.65 30.56Q262.31 30.56 265.57 33.65Q268.83 36.73 268.83 41.95Q268.83 42.56 268.7 43.9L268.5 45.37Q268.44 45.84 268.14 46.11Q267.84 46.38 267.45 46.38H257.51Q257.11 46.38 256.88 46.11Q256.65 45.84 256.72 45.37L256.91 43.63Q256.98 42.62 256.55 41.99Q256.12 41.35 255.33 41.35Q254.41 41.35 253.82 42.16Q253.23 42.96 253.23 44.3Q253.23 45.44 254.15 46.64Q255.07 47.85 257.57 49.99Q260.93 52.88 262.71 54.65Q264.49 56.43 265.51 58.54Q266.53 60.65 266.53 63.33Q266.53 63.86 266.4 65.2Q265.61 71.3 261.42 74.92Q257.24 78.54 251.12 78.54Q245.46 78.54 242.16 75.55Q238.87 72.57 238.87 67.61Z M301.95 32.1 300.9 40.88Q300.83 41.35 300.57 41.62Q300.31 41.89 299.85 41.89H292.21Q291.88 41.89 291.88 42.22L287.66 77Q287.6 77.46 287.34 77.73Q287.07 78 286.61 78H276.54Q276.08 78 275.85 77.73Q275.61 77.46 275.68 77L279.89 42.22Q279.89 41.89 279.57 41.89H272.19Q271.73 41.89 271.5 41.62Q271.27 41.35 271.33 40.88L272.39 32.1Q272.45 31.64 272.75 31.37Q273.05 31.1 273.51 31.1H301.16Q301.56 31.1 301.79 31.37Q302.02 31.64 301.95 32.1Z M339.88 31.1H349.89Q350.29 31.1 350.52 31.37Q350.75 31.64 350.68 32.1L345.28 77Q345.22 77.46 344.92 77.73Q344.62 78 344.23 78H334.09Q333.69 78 333.46 77.73Q333.23 77.46 333.3 77L336.59 49.59Q336.65 49.32 336.49 49.29Q336.33 49.26 336.19 49.46L331.72 56.02L330.93 57.23H330.86L327.5 49.46Q327.44 49.26 327.3 49.29Q327.17 49.32 327.11 49.59L323.81 77Q323.75 77.46 323.49 77.73Q323.22 78 322.76 78H312.69Q312.23 78 312 77.73Q311.76 77.46 311.83 77L317.23 32.1Q317.3 31.64 317.59 31.37Q317.89 31.1 318.28 31.1H328.29Q329.08 31.1 329.35 31.84L332.84 40.55Q332.97 40.81 333.23 40.55L338.7 31.84Q339.09 31.1 339.88 31.1Z M367.41 77.06 367.27 71.97Q367.34 71.84 367.21 71.74Q367.08 71.64 366.94 71.64H361.22Q360.89 71.64 360.76 71.97L359.5 77.06Q359.31 78 358.38 78H348.38Q347.39 78 347.65 76.93L362.14 31.97Q362.4 31.1 363.32 31.1H374.98Q375.9 31.1 375.97 31.97L379.59 76.93V77.06Q379.59 78 378.6 78H368.26Q367.34 78 367.41 77.06ZM363.65 61.99H366.75Q366.94 61.99 367.08 61.65L366.81 49.26Q366.81 48.99 366.65 49.02Q366.48 49.06 366.48 49.26L363.45 61.65Q363.32 61.99 363.65 61.99Z M416.66 32.1 415.61 40.88Q415.54 41.35 415.28 41.62Q415.01 41.89 414.55 41.89H406.91Q406.58 41.89 406.58 42.22L402.37 77Q402.3 77.46 402.04 77.73Q401.78 78 401.32 78H391.24Q390.78 78 390.55 77.73Q390.32 77.46 390.39 77L394.6 42.22Q394.6 41.89 394.27 41.89H386.9Q386.44 41.89 386.21 41.62Q385.97 41.35 386.04 40.88L387.09 32.1Q387.16 31.64 387.46 31.37Q387.75 31.1 388.21 31.1H415.87Q416.26 31.1 416.49 31.37Q416.73 31.64 416.66 32.1Z M415.08 66.54Q415.08 65.87 415.21 64.27L417.58 44.7Q418.37 38.2 422.65 34.38Q426.93 30.56 433.25 30.56Q438.98 30.56 442.34 33.75Q445.7 36.93 445.7 42.49Q445.7 43.09 445.57 44.7L445.5 45.04Q445.43 45.5 445.14 45.81Q444.84 46.11 444.45 46.11L434.31 46.44Q433.32 46.44 433.45 45.5L433.65 43.83Q433.78 42.69 433.32 42.02Q432.86 41.35 432 41.35Q431.08 41.35 430.45 42.02Q429.83 42.69 429.7 43.83L427.13 65.34Q427 66.41 427.43 67.08Q427.85 67.75 428.78 67.75Q429.7 67.75 430.32 67.11Q430.95 66.48 431.08 65.34L431.28 63.53Q431.34 63.06 431.64 62.82Q431.94 62.59 432.33 62.59L442.41 62.92Q442.87 62.92 443.1 63.23Q443.33 63.53 443.26 64L443.2 64.27Q442.41 70.76 438.09 74.65Q433.78 78.54 427.46 78.54Q421.73 78.54 418.4 75.32Q415.08 72.1 415.08 66.54Z M466.7 31.1H476.78Q477.24 31.1 477.47 31.37Q477.7 31.64 477.63 32.1L472.23 77Q472.17 77.46 471.87 77.73Q471.58 78 471.12 78H461.04Q460.58 78 460.35 77.73Q460.12 77.46 460.18 77L462.23 60.24Q462.23 59.91 461.96 59.91H458.87Q458.54 59.91 458.54 60.24L456.5 77Q456.43 77.46 456.13 77.73Q455.84 78 455.44 78H445.3Q444.91 78 444.68 77.73Q444.45 77.46 444.51 77L449.91 32.1Q449.98 31.64 450.27 31.37Q450.57 31.1 450.97 31.1H461.11Q461.5 31.1 461.73 31.37Q461.96 31.64 461.9 32.1L459.92 48.79Q459.79 49.12 460.18 49.12H463.28Q463.41 49.12 463.51 49.02Q463.61 48.92 463.61 48.79L465.65 32.1Q465.72 31.64 465.98 31.37Q466.24 31.1 466.7 31.1Z"/><path fill="currentColor" d="M184.28 108.69 183.25 100.47Q183.22 100.35 183.1 100.35H182.66Q182.54 100.35 182.48 100.51L181.49 108.63Q181.46 108.78 181.35 108.89Q181.24 109 181.08 109H176.81Q176.65 109 176.56 108.89Q176.47 108.78 176.5 108.63L179.07 87.67Q179.1 87.52 179.21 87.41Q179.32 87.3 179.47 87.3H185.95Q188.34 87.3 189.72 88.82Q191.1 90.34 191.1 92.88Q191.1 93.62 191.03 94.03Q190.82 95.76 190.03 97.14Q189.24 98.52 188.03 99.36Q187.97 99.39 187.94 99.44Q187.9 99.48 187.94 99.55L189.39 108.57V108.63Q189.39 109 189.05 109H184.65Q184.31 109 184.28 108.69ZM183.53 91.86 183.01 96.26Q183.01 96.41 183.13 96.41H183.97Q184.9 96.41 185.49 95.65Q186.07 94.89 186.07 93.56Q186.07 92.66 185.67 92.18Q185.27 91.7 184.56 91.7H183.72Q183.59 91.7 183.53 91.86Z M214.74 91.7H208.7Q208.57 91.7 208.51 91.86L208.05 95.76Q208.05 95.92 208.17 95.92H211.49Q211.64 95.92 211.73 96.03Q211.83 96.14 211.8 96.29L211.33 99.98Q211.33 100.13 211.21 100.24Q211.08 100.35 210.93 100.35H207.64Q207.52 100.35 207.46 100.51L206.99 104.44Q206.93 104.6 207.12 104.6H213.16Q213.31 104.6 213.41 104.71Q213.5 104.81 213.47 104.97L213.04 108.63Q213 108.78 212.88 108.89Q212.76 109 212.6 109H201.78Q201.63 109 201.54 108.89Q201.44 108.78 201.47 108.63L204.05 87.67Q204.08 87.52 204.19 87.41Q204.29 87.3 204.45 87.3H215.27Q215.61 87.3 215.61 87.67L215.14 91.33Q215.11 91.48 215 91.59Q214.9 91.7 214.74 91.7Z M225.64 103.92Q225.64 103.58 225.71 102.89L226.88 93.38Q227.22 90.46 229.15 88.76Q231.07 87.05 233.92 87.05Q236.53 87.05 238.03 88.46Q239.53 89.87 239.53 92.32Q239.53 92.63 239.47 93.38L239.44 93.66Q239.41 93.81 239.3 93.92Q239.19 94.03 239.04 94.03L234.73 94.21Q234.39 94.21 234.42 93.84L234.54 93Q234.6 92.29 234.29 91.87Q233.98 91.45 233.39 91.45Q232.81 91.45 232.4 91.87Q232 92.29 231.91 93L230.63 103.33Q230.57 104.01 230.87 104.43Q231.16 104.85 231.75 104.85Q232.34 104.85 232.76 104.43Q233.18 104.01 233.27 103.33L233.36 102.43Q233.39 102.27 233.5 102.16Q233.61 102.06 233.77 102.06L238.01 102.24Q238.35 102.24 238.35 102.61L238.29 102.89Q237.95 105.78 236.01 107.51Q234.08 109.25 231.22 109.25Q228.62 109.25 227.13 107.82Q225.64 106.4 225.64 103.92Z M258.59 108.66 258.53 105.96Q258.56 105.9 258.5 105.85Q258.43 105.81 258.37 105.81H255.12Q254.93 105.81 254.93 105.96L254.25 108.66Q254.16 109 253.81 109H249.54Q249.16 109 249.29 108.6L256.2 87.64Q256.29 87.3 256.63 87.3H261.53Q261.9 87.3 261.9 87.64L263.64 108.6V108.69Q263.64 109 263.3 109H258.93Q258.59 109 258.59 108.66ZM256.2 101.84H258.22Q258.37 101.84 258.37 101.68L258.15 94.62Q258.15 94.49 258.09 94.49Q258.03 94.49 257.97 94.62L256.11 101.68Q256.11 101.84 256.2 101.84Z M290.23 92.94Q290.23 93.69 290.17 94.09Q289.8 97.03 288.01 98.82Q286.23 100.6 283.69 100.6H281.74Q281.61 100.6 281.55 100.75L280.59 108.63Q280.56 108.78 280.45 108.89Q280.34 109 280.19 109H275.91Q275.75 109 275.66 108.89Q275.57 108.78 275.6 108.63L278.17 87.67Q278.2 87.52 278.31 87.41Q278.42 87.3 278.57 87.3H285.08Q287.44 87.3 288.83 88.83Q290.23 90.37 290.23 92.94ZM285.18 93.62Q285.18 92.69 284.77 92.2Q284.37 91.7 283.66 91.7H282.82Q282.67 91.7 282.67 91.86L282.08 96.48Q282.08 96.63 282.2 96.63H283.07Q284 96.63 284.59 95.84Q285.18 95.05 285.18 93.62Z"/></g></svg></a>
     <h1 id="pageTitle">Clip Review</h1>
     <nav class="tabs" aria-label="Sections">
-      <button class="tab" data-tab="clips" aria-pressed="true">Clips</button>
+      <button class="tab" data-tab="clips" aria-pressed="true">Clips review <span class="bubble" id="queueCount">0</span></button>
+      <button class="tab" data-tab="check" aria-pressed="false">Clip Check</button>
       <button class="tab" data-tab="offers" aria-pressed="false">Offers</button>
       <button class="tab" data-tab="stats" aria-pressed="false">Stats</button>
-      <button class="tab" data-tab="check" aria-pressed="false">Clip Check</button>
     </nav>
     <span class="left" id="left"></span>
     <div class="bar" id="clipBar">
@@ -233,15 +243,17 @@
     <div id="stBody"></div>
   </section>
   <section id="checkView" hidden>
-    <p class="help">What a fan in the United Kingdom will see in the app for upcoming games. This tab is about clips that are <b>already live</b>; the <b>Clips</b> tab is for new clips waiting for your decision. Pick which games ahead to check: <b>2nd &amp; 3rd</b> skips each club's next game. Each fixture shows its five meetings in feed order and the clip that plays first. <b>Watch</b> opens the clip in a new tab. <b>Take off</b> removes a live clip from that match, and its next backup plays instead (or the match shows no clip). The check runs by itself every 15 minutes.</p>
+    <p class="help">What fans in the United Kingdom will see, and miss, in each club's games ahead. Use it to get ready: find the missing clips before those games. <b>Send to Henry</b> puts a missing match at the top of his nightly search. If you find a clip yourself, share the link with Claude in chat. Live clips the check isn't sure about move to <b>Clips review</b> by themselves. The check runs every 15 minutes.</p>
     <div class="bar ckbar">
       <button class="chip" data-range="1-1" aria-pressed="false">Next game</button>
-      <button class="chip" data-range="2-3" aria-pressed="true">2nd &amp; 3rd</button>
-      <button class="chip" data-range="4-5" aria-pressed="false">4th &amp; 5th</button>
+      <button class="chip" data-range="2-2" aria-pressed="false">2nd</button>
+      <button class="chip" data-range="3-3" aria-pressed="false">3rd</button>
+      <button class="chip" data-range="4-4" aria-pressed="false">4th</button>
+      <button class="chip" data-range="5-5" aria-pressed="false">5th</button>
+      <button class="chip" data-range="2-5" aria-pressed="true">2nd–5th</button>
       <select id="ckComp" aria-label="Competition"></select>
-      <button class="chip" data-show="all" aria-pressed="true">All</button>
-      <button class="chip" data-show="gaps" aria-pressed="false">Has gaps</button>
-      <button class="chip" data-show="flags" aria-pressed="false">Has flags</button>
+      <button class="chip" data-show="all" aria-pressed="true">All fixtures</button>
+      <button class="chip" data-show="gaps" aria-pressed="false">Only with gaps</button>
       <input type="search" id="ckQ" placeholder="Search a club" aria-label="Search a club">
       <button class="chip" id="ckRefresh">Reload</button>
       <span class="ckcount" id="ckCount"></span>
@@ -376,6 +388,7 @@ function nextBatch(){
   const firstChoice = { bad_clip: "bad", wrong_match: "wrong" };
   batch = pool.slice(0, BATCH).map(c => ({ clip: c, v: firstChoice[c.claude_verdict] || "approve", broken: null, reason: null }));
   $("#left").textContent = pool.length ? `${pool.length} waiting` : "";
+  $("#queueCount").textContent = clips.length;
   render();
 }
 
@@ -821,16 +834,18 @@ $("#offList").addEventListener("click", async e => {
   }
 });
 
-/* ---------- Clip Check tab: upcoming games as fans will see them (clip_check_admin, clip_check_reject) ---------- */
-let checkLoaded = false, ckData = [], ckRange = "2-3", ckShow = "all";
+/* ---------- Clip Check tab: what fans will miss in the games ahead (clip_check_admin, clip_check_send_henry, clip_check_reject) ---------- */
+let checkLoaded = false, ckData = [], ckSent = {}, ckMoved = [], ckRange = "2-5", ckShow = "all", ckPick = new Set();
 function setCkStatus(msg, isErr){ const el = $("#ckStatus"); el.textContent = msg || ""; el.classList.toggle("err", !!isErr); }
 const ckFriendly = /summer series|champions cup|emirates cup|friendl|audi cup|asia trophy|club world series/i;
 const ckDate = d => new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 const ckDay = d => new Date(d + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+const ckShortDay = d => new Date(d + "T12:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 const ckWatch = c => c.src === "facebook" ? c.vid : "https://www.youtube.com/watch?v=" + encodeURIComponent(c.vid);
+const ckNth = { 1: "next game", 2: "2nd game", 3: "3rd game", 4: "4th game", 5: "5th game" };
 function ckScores(label){ const o = new Set(); for (const m of label.matchAll(/(\d+)\s*–\s*(\d+)/g)) { o.add(m[1] + "-" + m[2]); o.add(m[2] + "-" + m[1]); } return o; }
 function ckTitleScores(t){ const o = []; for (const m of t.matchAll(/(?<![\d.])(\d{1,2})\s*[-–:]\s*(\d{1,2})(?![\d.])/g)) if (+m[1] <= 15 && +m[2] <= 15) o.push(+m[1] + "-" + +m[2]); return o; }
-// Flags for one meeting; [level, text]. Red = probably wrong, amber = worth a look.
+// Flags for one meeting; [level, text]. The server moves live clips with red or amber flags to Clips review by itself.
 function ckFlags(m, vidCount){
   const f = [], c = m.clip;
   if (ckFriendly.test(m.comp)) f.push(["red", "Friendly: should not show"]);
@@ -847,10 +862,10 @@ function ckFlags(m, vidCount){
 }
 async function loadCheck(){
   setCkStatus("Loading…"); $("#ckBody").innerHTML = ""; $("#ckCount").textContent = "";
-  const [a, b] = ckRange.split("-").map(Number);
   try {
-    const j = await rpc("clip_check_admin", { p_from: a, p_to: b });
-    ckData = j.fixtures || []; checkLoaded = true;
+    const j = await rpc("clip_check_admin", { p_from: 1, p_to: 5 });
+    ckData = j.fixtures || []; ckMoved = j.moved || []; checkLoaded = true;
+    ckSent = Object.fromEntries((j.sent || []).map(s => [s.mid, s]));
     const vidCount = {}, seen = new Set();
     ckData.forEach(fx => fx.meetings.forEach(m => { if (m.clip && !seen.has(m.mid)) { seen.add(m.mid); vidCount[m.clip.vid] = (vidCount[m.clip.vid] || 0) + 1; } }));
     ckData.forEach(fx => fx.meetings.forEach(m => { m.flags = ckFlags(m, vidCount); }));
@@ -861,21 +876,26 @@ async function loadCheck(){
     renderCheck();
   } catch(e){
     if (e.pin) { store.set("lmr_review_pin", null); return showPin(e.message); }
-    setCkStatus("Couldn't run the check: " + e.message, true);
+    setCkStatus("Couldn't load the check: " + e.message, true);
   }
 }
-const ckBad = m => m.clip && m.flags.some(([l]) => l === "red" || l === "amber");
 function ckActions(m){
   if (!m.clip) return "<span></span>";
   return `<div class="ckact"><a class="small primary" href="${esc(ckWatch(m.clip))}" target="_blank" rel="noopener">Watch</a>
     ${m.clip.dbid ? `<select data-takeoff="${m.clip.dbid}" aria-label="Take off this clip"><option value="">Take off…</option><option>Bad clip</option><option>Wrong match</option></select>` : ""}</div>`;
 }
 function ckFlagHtml(fl){ return fl.map(([l, t]) => `<span class="flag ${l}">${esc(t)}</span>`).join(""); }
+function ckSentChip(mid){
+  const s = ckSent[mid]; if (!s) return "";
+  if (!s.searched_at) return `<span class="flag ok">Sent to Henry ${ckShortDay(s.sent_at.slice(0, 10))} · searches tonight</span>`;
+  if (s.waiting) return `<span class="flag ok">Henry found a clip · waiting in Clips review</span>`;
+  return `<span class="flag amber">Henry searched ${ckShortDay(s.searched_at.slice(0, 10))} · nothing found yet</span>`;
+}
 function ckMeeting(m){
   const res = `${esc(m.home)} ${esc(m.score)} ${esc(m.away)}`;
   const when = `<div class="when"><span>${ckDate(m.date)}</span><span>${esc(m.comp)}</span></div>`;
-  if (!m.clip) return `<div class="ckm gap">${when}<div class="body"><span class="res">${res}</span><span class="ttl">No clip that plays in the UK yet</span>
-    ${m.flags.length ? `<div class="meta">${ckFlagHtml(m.flags)}</div>` : ""}</div><span></span></div>`;
+  if (!m.clip) return `<div class="ckm gap">${when}<div class="body"><span class="res">${res}</span><span class="ttl">Missing: no clip that plays in the UK</span>
+    <div class="meta">${ckFlagHtml(m.flags)}${ckSentChip(m.mid)}</div></div><span></span></div>`;
   const c = m.clip;
   const tags = (c.off ? `<span class="flag ok">Official</span>` : "") + (c.auto ? `<span class="flag">Auto</span>` : "") +
     (m.n > 1 ? `<span class="flag">${m.n - 1} backup${m.n > 2 ? "s" : ""}</span>` : "") + ckFlagHtml(m.flags);
@@ -883,54 +903,122 @@ function ckMeeting(m){
     <span class="src">${esc(c.ch)} · ${dur(c.dur)} · ${c.src === "facebook" ? "Facebook" : "YouTube"}${c.dbid ? " · id " + c.dbid : ""}</span>
     <div class="meta">${tags}</div></div>${ckActions(m)}</div>`;
 }
-function renderCheck(){
+function ckFiltered(){
   const comp = $("#ckComp").value, q = $("#ckQ").value.trim().toLowerCase();
-  // Summary over unique meetings.
-  const uniq = new Map(); ckData.forEach(f => f.meetings.forEach(m => uniq.set(m.mid, m)));
-  const all = [...uniq.values()], withClip = all.filter(m => m.clip), off = withClip.filter(m => m.clip.off), bad = withClip.filter(ckBad);
-  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
-  const kpi = (n, l) => `<div class="kpi"><b>${n}</b><span>${l}</span></div>`;
-  const byComp = {};
-  ckData.forEach(f => { const c = byComp[f.comp] ||= { fx: 0, n: 0, clip: 0, full: 0 }; c.fx++; c.n += f.meetings.length;
-    const k = f.meetings.filter(m => m.clip).length; c.clip += k; if (f.meetings.length && k === f.meetings.length) c.full++; });
-  const rows = Object.entries(byComp).sort((a, b) => b[1].fx - a[1].fx || a[0].localeCompare(b[0]));
-  const issues = bad.slice().sort((a, b) => (b.flags.some(([l]) => l === "red") - a.flags.some(([l]) => l === "red")) || b.date.localeCompare(a.date));
-  const list = ckData.filter(f => {
+  const [a, b] = ckRange.split("-").map(Number);
+  return ckData.filter(f => {
+    if (f.nth < a || f.nth > b) return false;
     if (comp && f.comp !== comp) return false;
     if (q && !(f.home + " " + f.away).toLowerCase().includes(q)) return false;
     if (ckShow === "gaps" && !(f.meetings.length < 5 || f.meetings.some(m => !m.clip))) return false;
-    if (ckShow === "flags" && !f.meetings.some(m => m.flags.some(([l]) => l === "red" || l === "amber"))) return false;
     return true;
   });
-  $("#ckCount").textContent = `${list.length} of ${ckData.length} fixtures`;
+}
+// Unique missing meetings in the shown fixtures, with the first fixture that needs each one.
+function ckMissing(list){
+  const out = new Map();
+  list.forEach(f => f.meetings.forEach(m => {
+    if (m.clip || ckFriendly.test(m.comp)) return;
+    const o = out.get(m.mid);
+    if (!o) out.set(m.mid, { m, need: f, more: 0 }); else { o.more++; if (f.ko < o.need.ko) o.need = f; }
+  }));
+  return [...out.values()].sort((x, y) => x.need.ko.localeCompare(y.need.ko) || y.m.date.localeCompare(x.m.date));
+}
+function ckMissLine(x){
+  return `${x.m.home} ${x.m.score} ${x.m.away} · ${x.m.comp} · ${ckDate(x.m.date)} · needed for ${x.need.home} v ${x.need.away} (${ckShortDay(x.need.ko.slice(0, 10))}) · match id ${x.m.mid}`;
+}
+function renderCheck(){
+  const list = ckFiltered(), missing = ckMissing(list);
+  const uniq = new Map(); list.forEach(f => f.meetings.forEach(m => uniq.set(m.mid, m)));
+  const all = [...uniq.values()], withClip = all.filter(m => m.clip);
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+  const kpi = (n, l) => `<div class="kpi"><b>${n}</b><span>${l}</span></div>`;
+  const waiting = ckMoved.filter(x => x.status === "candidate");
+  const byComp = {};
+  list.forEach(f => { const c = byComp[f.comp] ||= { fx: 0, n: 0, clip: 0, full: 0 }; c.fx++; c.n += f.meetings.length;
+    const k = f.meetings.filter(m => m.clip).length; c.clip += k; if (f.meetings.length && k === f.meetings.length) c.full++; });
+  const rows = Object.entries(byComp).sort((a, b) => b[1].fx - a[1].fx || a[0].localeCompare(b[0]));
+  ckPick = new Set([...ckPick].filter(id => missing.some(x => x.m.mid === id)));
+  $("#ckCount").textContent = `${list.length} fixtures`;
   const days = {}; list.forEach(f => (days[f.ko.slice(0, 10)] ||= []).push(f));
+  const status = s => s === "candidate" ? `<span class="flag amber">Waiting in Clips review</span>` : s === "approved" ? `<span class="flag ok">You approved it</span>` : `<span class="flag">You rejected it</span>`;
   $("#ckBody").innerHTML = `
-    <div class="kpis">${kpi(ckData.length, "Fixtures checked")}${kpi(pct(withClip.length, all.length) + "%", `Meetings with a clip (${withClip.length} of ${all.length})`)}
-      ${kpi(pct(off.length, withClip.length) + "%", "Clips from official accounts")}${kpi(bad.length, "Live clips to double-check")}</div>
-    <div class="stcard cksec"><h3>Coverage by competition</h3><p class="sub">Share of meetings with a clip that plays in the UK</p>
+    <div class="kpis">${kpi(list.length, "Fixtures in view")}${kpi(pct(withClip.length, all.length) + "%", `Meetings with a clip (${withClip.length} of ${all.length})`)}
+      ${kpi(missing.length, "Missing clips to find")}${kpi(waiting.length, "Unsure clips waiting in Clips review")}</div>
+
+    <div class="stcard cksec" style="padding:0" id="ckMissCard"><div style="padding:14px 14px 8px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;justify-content:space-between">
+      <div><h3>Missing clips</h3><p class="sub" style="margin:0">Meetings fans will see with no clip, soonest needed first. Send them to Henry (he searches them first tonight at 04:00 UK), or find one yourself and share the link with Claude.</p></div>
+      <div class="bar" style="margin:0">
+        <button class="chip" id="ckPickAll" type="button">${missing.length && missing.every(x => ckPick.has(x.m.mid)) ? "Clear selection" : "Select all"}</button>
+        <button class="chip" id="ckSendPicked" type="button" aria-pressed="${ckPick.size ? "true" : "false"}" ${ckPick.size ? "" : "disabled"}>Send ${ckPick.size || ""} to Henry</button>
+        <button class="chip" id="ckCopy" type="button">Copy list</button>
+      </div></div>
+      ${missing.length ? missing.map(x => `<label class="ckmiss"><input type="checkbox" data-pick="${x.m.mid}" ${ckPick.has(x.m.mid) ? "checked" : ""}>
+        <span class="body" style="display:flex;flex-direction:column;gap:4px;min-width:0">
+          <span class="res" style="font-weight:600;font-size:14px">${esc(x.m.home)} ${esc(x.m.score)} ${esc(x.m.away)} <span class="t">· ${esc(x.m.comp)} · ${ckDate(x.m.date)} · match id ${x.m.mid}</span></span>
+          <span class="t">Needed for ${esc(x.need.home)} v ${esc(x.need.away)}, ${ckShortDay(x.need.ko.slice(0, 10))} (${ckNth[x.need.nth] || ""})${x.more ? ` and ${x.more} more fixture${x.more > 1 ? "s" : ""}` : ""}</span>
+          <span class="meta">${ckSentChip(x.m.mid)}</span></span>
+        <button class="small" type="button" data-send="${x.m.mid}">${ckSent[x.m.mid] ? "Send again" : "Send to Henry"}</button></label>`).join("")
+        : `<p class="cknote">Nothing missing in this view.</p>`}
+    </div>
+
+    ${ckMoved.length ? `<div class="stcard cksec" style="padding:0"><div style="padding:14px 14px 8px"><h3>Unsure clips moved to Clips review</h3><p class="sub" style="margin:0">Live clips the check wasn't sure about. They're off the app until you approve them in Clips review. Each clip is moved once: if you approve it, it stays.</p></div>
+      ${ckMoved.map(x => `<div class="ckissue"><div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+        <span class="res" style="font-weight:600;font-size:14px">${esc(x.home)} ${esc(x.score)} ${esc(x.away)} <span class="t">· ${esc(x.comp)} · ${ckDate(x.date)}</span></span>
+        <span class="t">${esc(x.title)} · ${esc(x.ch)} · id ${x.id}</span>
+        <div class="meta"><span class="flag red">${esc(x.reason)}</span>${status(x.status)}</div></div><span></span></div>`).join("")}</div>` : ""}
+
+    <div class="stcard cksec"><h3>Coverage by competition</h3><p class="sub">Share of meetings with a clip that plays in the UK, for the games in view</p>
       <div class="ckwrap"><table class="sttable"><tr><th>Competition</th><th class="n">Fixtures</th><th class="n">All 5 clips</th><th class="n">Meetings with a clip</th><th style="width:30%"></th></tr>
       ${rows.map(([n, c]) => `<tr><td>${esc(n)}</td><td class="n">${c.fx}</td><td class="n">${c.full}</td><td class="n">${c.clip} of ${c.n} · ${pct(c.clip, c.n)}%</td><td><div class="cktrack"><i style="width:${pct(c.clip, c.n)}%"></i></div></td></tr>`).join("")}</table></div></div>
-    <div class="stcard cksec" style="padding:0"><div style="padding:14px 14px 4px"><h3>Live clips to double-check</h3><p class="sub">These clips are already approved and showing in the app, but an automatic check thinks they may not be right (for example a friendly, a fan upload, or one video used for two matches). Red means probably wrong. Take off any you don't want.</p></div>
-      ${issues.length ? issues.map(m => `<div class="ckissue"><div class="body" style="display:flex;flex-direction:column;gap:4px;min-width:0">
-        <span class="res" style="font-weight:600;font-size:14px">${esc(m.home)} ${esc(m.score)} ${esc(m.away)} <span class="t">· ${esc(m.comp)} · ${ckDate(m.date)}</span></span>
-        <span class="t">${esc(m.clip.title)} · ${esc(m.clip.ch)} · ${dur(m.clip.dur)}${m.clip.dbid ? " · id " + m.clip.dbid : ""}</span>
-        <div class="meta">${ckFlagHtml(m.flags.filter(([l]) => l))}</div></div>${ckActions(m)}</div>`).join("") : `<p class="cknote">Nothing to look at. Every live clip passed the checks.</p>`}</div>
+
+    <h2 style="font-size:16px;margin:4px 0 0">Every fixture</h2>
     ${Object.keys(days).sort().map(d => `<div class="ckday">${ckDay(d)}</div>` + days[d].map(f => {
       const k = f.meetings.filter(m => m.clip).length, n = f.meetings.length;
       const cls = !n ? "none" : k === n ? "full" : k ? "part" : "none";
-      return `<article class="ckfx"><div class="ckhead"><div><h3>${esc(f.home)} v ${esc(f.away)}</h3><span class="sub">${esc(f.comp)} · ${f.tbc ? "Time TBC" : f.ko.slice(11) + " UK"}</span></div>
+      return `<article class="ckfx"><div class="ckhead"><div><h3>${esc(f.home)} v ${esc(f.away)}</h3><span class="sub">${esc(f.comp)} · ${f.tbc ? "Time TBC" : f.ko.slice(11) + " UK"} · ${ckNth[f.nth] || ""}</span></div>
         <span class="ckcov ${cls}">${n ? `${k} of ${n} clips` : "First-ever meeting"}</span></div>
         ${n ? f.meetings.map(ckMeeting).join("") : `<p class="cknote">These clubs have never met in a competitive game, so fans see the first-ever meeting screen.</p>`}</article>`;
     }).join("")).join("") || `<p class="cknote">No fixtures match these filters.</p>`}`;
 }
+async function ckSend(ids){
+  if (!ids.length) return;
+  try {
+    const j = await rpc("clip_check_send_henry", { p_match_ids: ids });
+    const now = new Date().toISOString();
+    ids.forEach(id => { ckSent[id] = { mid: id, sent_at: now, searched_at: null, waiting: false }; ckPick.delete(id); });
+    renderCheck();
+    showToastPlain(`Sent ${j.sent} to Henry. He searches them first tonight at 04:00 UK; finds land in Clips review.`);
+  } catch(err){
+    if (err.pin) { store.set("lmr_review_pin", null); return showPin(err.message); }
+    setCkStatus("Couldn't send to Henry: " + err.message, true);
+  }
+}
 document.querySelectorAll("[data-range]").forEach(b => b.addEventListener("click", () => {
-  ckRange = b.dataset.range; document.querySelectorAll("[data-range]").forEach(x => x.setAttribute("aria-pressed", x === b)); loadCheck(); }));
+  ckRange = b.dataset.range; document.querySelectorAll("[data-range]").forEach(x => x.setAttribute("aria-pressed", x === b)); renderCheck(); }));
 document.querySelectorAll("[data-show]").forEach(b => b.addEventListener("click", () => {
   ckShow = b.dataset.show; document.querySelectorAll("[data-show]").forEach(x => x.setAttribute("aria-pressed", x === b)); renderCheck(); }));
 $("#ckComp").addEventListener("change", renderCheck);
 $("#ckQ").addEventListener("input", renderCheck);
 $("#ckRefresh").addEventListener("click", () => loadCheck());
+$("#ckBody").addEventListener("click", async e => {
+  const send = e.target.closest("[data-send]");
+  if (send) { e.preventDefault(); send.disabled = true; return ckSend([Number(send.dataset.send)]); }
+  if (e.target.closest("#ckSendPicked")) return ckSend([...ckPick]);
+  if (e.target.closest("#ckPickAll")) {
+    const ms = ckMissing(ckFiltered()).map(x => x.m.mid);
+    const allOn = ms.length && ms.every(id => ckPick.has(id));
+    ckPick = allOn ? new Set() : new Set(ms); return renderCheck();
+  }
+  if (e.target.closest("#ckCopy")) {
+    const text = "Missing clips (" + new Date().toLocaleDateString("en-GB") + "):\n" + ckMissing(ckFiltered()).map(ckMissLine).join("\n");
+    try { await navigator.clipboard.writeText(text); showToastPlain("List copied. Paste it to Claude or keep it handy while you search."); }
+    catch(err){ setCkStatus("Couldn't copy automatically. Select the list on screen instead.", true); }
+  }
+});
 $("#ckBody").addEventListener("change", async e => {
+  const pick = e.target.closest("[data-pick]");
+  if (pick) { const id = Number(pick.dataset.pick); pick.checked ? ckPick.add(id) : ckPick.delete(id); return renderCheck(); }
   const s = e.target.closest("select[data-takeoff]"); if (!s || !s.value) return;
   const reason = s.value; s.disabled = true;
   try {
@@ -947,7 +1035,7 @@ $("#ckBody").addEventListener("change", async e => {
 });
 function showToastPlain(text){
   $("#toastText").textContent = text; $("#undo").hidden = true; $("#toast").classList.add("show");
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("#toast").classList.remove("show"); $("#undo").hidden = false; }, 3500);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("#toast").classList.remove("show"); $("#undo").hidden = false; }, 4500);
 }
 
 start().then(() => { const t = store.get("lmr_review_tab"); if ((t === "offers" || t === "stats" || t === "check") && !$("#app").hidden) showTab(t); });
