@@ -142,6 +142,44 @@
   .small{border:1px solid var(--line);background:transparent;color:var(--text);border-radius:10px;padding:9px 14px;font:600 13px Inter,sans-serif;cursor:pointer}
   .small.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
   .small.danger{color:var(--red);border-color:var(--red-line)}
+  /* Clip Check tab: what fans will see for upcoming games */
+  .ckbar{margin:0 0 14px}
+  .ckbar select,.ckbar input{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:7px 13px;font:500 13px Inter,sans-serif;min-width:0}
+  .ckbar input{flex:1 1 160px}
+  .ckcount{color:var(--muted);font-size:13px}
+  .cksec{margin:0 0 18px}
+  .cksec h2{font-size:16px;margin:0 0 8px}
+  .ckwrap{overflow-x:auto}
+  .ckwrap .sttable{min-width:460px}
+  .cktrack{background:var(--red-bg);border-radius:4px;height:8px;overflow:hidden;min-width:90px}
+  .cktrack i{display:block;height:100%;background:var(--accent)}
+  .ckday{font-size:15px;margin:18px 0 8px;color:var(--muted);font-weight:600}
+  .ckfx{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin:0 0 12px;overflow:hidden}
+  .ckhead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .ckhead h3{margin:0;font-size:16px}
+  .ckhead .sub{color:var(--muted);font-size:12px}
+  .ckcov{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+  .ckcov.full{color:var(--accent)} .ckcov.part{color:var(--amber)} .ckcov.none{color:var(--red)}
+  .ckm{display:grid;grid-template-columns:104px minmax(0,1fr) auto;gap:4px 12px;padding:10px 14px;border-bottom:1px solid var(--line);align-items:start}
+  .ckm:last-child{border-bottom:0}
+  .ckm .when{color:var(--muted);font-size:12px;display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
+  .ckm .body{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .ckm .res{font-weight:600;font-size:14px}
+  .ckm .ttl{font-size:13px;color:var(--text);word-break:break-word}
+  .ckm .src{font-size:12px;color:var(--muted)}
+  .ckm.gap .ttl{color:var(--red)}
+  .ckact{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+  .ckact a{text-align:center;text-decoration:none}
+  .ckact select{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:7px 8px;font:500 12px Inter,sans-serif}
+  .flag{font:600 11px Inter,sans-serif;border-radius:5px;padding:2px 6px;border:1px solid var(--line);color:var(--muted)}
+  .flag.red{color:var(--red);background:var(--red-bg);border-color:var(--red-line)}
+  .flag.amber{color:var(--amber);border-color:#5a4a20}
+  .flag.ok{color:var(--accent);background:var(--accent-bg);border-color:#3c5420}
+  .ckissue{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;padding:10px 14px;border-bottom:1px solid var(--line);align-items:center}
+  .ckissue:last-child{border-bottom:0}
+  .ckissue .t{color:var(--muted);font-size:12px;word-break:break-word}
+  .cknote{color:var(--muted);font-size:13px;padding:12px 14px}
+  @media (max-width:560px){ .ckm{grid-template-columns:minmax(0,1fr) auto} .ckm .when{grid-column:1/-1;flex-direction:row;gap:8px} }
   [hidden]{display:none!important}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
   @media (max-width:560px){ .bar{margin-left:0} .save{flex:1 1 100%} }
@@ -164,6 +202,7 @@
       <button class="tab" data-tab="clips" aria-pressed="true">Clips</button>
       <button class="tab" data-tab="offers" aria-pressed="false">Offers</button>
       <button class="tab" data-tab="stats" aria-pressed="false">Stats</button>
+      <button class="tab" data-tab="check" aria-pressed="false">Clip Check</button>
     </nav>
     <span class="left" id="left"></span>
     <div class="bar" id="clipBar">
@@ -192,6 +231,23 @@
     </div>
     <div class="status" id="stStatus"></div>
     <div id="stBody"></div>
+  </section>
+  <section id="checkView" hidden>
+    <p class="help">What a fan in the United Kingdom will see for upcoming games, straight from the live feed. Pick which games ahead to check: <b>2nd &amp; 3rd</b> skips each club's next game. Each fixture shows its five meetings in feed order and the clip that plays first. <b>Watch</b> opens the clip in a new tab. <b>Take off</b> removes a live clip from that match, and its next backup plays instead (or the match shows no clip).</p>
+    <div class="bar ckbar">
+      <button class="chip" data-range="1-1" aria-pressed="false">Next game</button>
+      <button class="chip" data-range="2-3" aria-pressed="true">2nd &amp; 3rd</button>
+      <button class="chip" data-range="4-5" aria-pressed="false">4th &amp; 5th</button>
+      <select id="ckComp" aria-label="Competition"></select>
+      <button class="chip" data-show="all" aria-pressed="true">All</button>
+      <button class="chip" data-show="gaps" aria-pressed="false">Has gaps</button>
+      <button class="chip" data-show="flags" aria-pressed="false">Has flags</button>
+      <input type="search" id="ckQ" placeholder="Search a club" aria-label="Search a club">
+      <button class="chip" id="ckRefresh">Refresh</button>
+      <span class="ckcount" id="ckCount"></span>
+    </div>
+    <div class="status" id="ckStatus"></div>
+    <div id="ckBody"></div>
   </section>
   <div id="clipsView">
   <p class="help">Every clip starts as Approve. Change any you don't want using the menu under each clip, or press its number key (<kbd>1</kbd>–<kbd>9</kbd>, and <kbd>0</kbd> for clip 10) to flip it between Approve and Reject. Pick <b>Skip for now</b> to leave a clip in the review list for later. Tap a title to open the video in a new tab. Press <kbd>Enter</kbd> to save the batch.</p>
@@ -440,7 +496,7 @@ $("#allRej").addEventListener("click", () => {
 });
 
 document.addEventListener("keydown", e => {
-  if ($("#app").hidden || !$("#offersView").hidden || !$("#statsView").hidden || /^(INPUT|SELECT)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+  if ($("#app").hidden || !$("#offersView").hidden || !$("#statsView").hidden || !$("#checkView").hidden || /^(INPUT|SELECT)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
   const m = /^Digit([0-9])$/.exec(e.code) || /^Numpad([0-9])$/.exec(e.code);
   if (m){ const i = m[1] === "0" ? 9 : Number(m[1]) - 1; const b = batch[i]; if (b) choose(i, CH[b.v].reject ? "approve" : "bad"); e.preventDefault(); }
   else if (e.key === "Enter"){ save(); e.preventDefault(); }
@@ -484,7 +540,7 @@ async function save(){
 $("#save").addEventListener("click", save);
 
 function showToast(text){
-  $("#toastText").textContent = text; $("#toast").classList.add("show");
+  $("#toastText").textContent = text; $("#undo").hidden = false; $("#toast").classList.add("show");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { $("#toast").classList.remove("show"); lastSaved = null; }, 10000);
 }
@@ -578,13 +634,14 @@ function setOffStatus(msg, isErr){ const el = $("#offStatus"); el.textContent = 
 
 function showTab(t){
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-pressed", b.dataset.tab === t));
-  const off = t === "offers", st = t === "stats", isClips = !off && !st;
-  $("#offersView").hidden = !off; $("#statsView").hidden = !st;
+  const off = t === "offers", st = t === "stats", ck = t === "check", isClips = !off && !st && !ck;
+  $("#offersView").hidden = !off; $("#statsView").hidden = !st; $("#checkView").hidden = !ck;
   $("#clipsView").hidden = !isClips; $("#clipBar").hidden = !isClips; $("#left").hidden = !isClips;
-  $("#savebar").hidden = !isClips; $("#pageTitle").textContent = off ? "Offers" : st ? "Stats" : "Clip Review";
+  $("#savebar").hidden = !isClips; $("#pageTitle").textContent = off ? "Offers" : st ? "Stats" : ck ? "Clip Check" : "Clip Review";
   store.set("lmr_review_tab", t);
   if (off && !offersLoaded) loadOffers();
   if (st && !statsLoaded) loadStats();
+  if (ck && !checkLoaded) loadCheck();
 }
 
 // ---------- Stats tab: anonymous app counts (stats_admin) ----------
@@ -764,7 +821,134 @@ $("#offList").addEventListener("click", async e => {
   }
 });
 
-start().then(() => { const t = store.get("lmr_review_tab"); if ((t === "offers" || t === "stats") && !$("#app").hidden) showTab(t); });
+/* ---------- Clip Check tab: upcoming games as fans will see them (clip_check_admin, clip_check_reject) ---------- */
+let checkLoaded = false, ckData = [], ckRange = "2-3", ckShow = "all";
+function setCkStatus(msg, isErr){ const el = $("#ckStatus"); el.textContent = msg || ""; el.classList.toggle("err", !!isErr); }
+const ckFriendly = /summer series|champions cup|emirates cup|friendl|audi cup|asia trophy|club world series/i;
+const ckDate = d => new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+const ckDay = d => new Date(d + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+const ckWatch = c => c.src === "facebook" ? c.vid : "https://www.youtube.com/watch?v=" + encodeURIComponent(c.vid);
+function ckScores(label){ const o = new Set(); for (const m of label.matchAll(/(\d+)\s*–\s*(\d+)/g)) { o.add(m[1] + "-" + m[2]); o.add(m[2] + "-" + m[1]); } return o; }
+function ckTitleScores(t){ const o = []; for (const m of t.matchAll(/(?<![\d.])(\d{1,2})\s*[-–:]\s*(\d{1,2})(?![\d.])/g)) if (+m[1] <= 15 && +m[2] <= 15) o.push(+m[1] + "-" + +m[2]); return o; }
+// Flags for one meeting; [level, text]. Red = probably wrong, amber = worth a look.
+function ckFlags(m, vidCount){
+  const f = [], c = m.clip;
+  if (ckFriendly.test(m.comp)) f.push(["red", "Friendly: should not show"]);
+  if (!c) return f;
+  if ((vidCount[c.vid] || 0) > 1) f.push(["red", "Same video on two matches"]);
+  const ts = ckTitleScores(c.title || ""), sc = ckScores(m.score || "");
+  if (ts.length && !ts.some(x => sc.has(x))) f.push(["red", "Score in title differs"]);
+  if (/shoot-?out|but dingue|pitchview|interview|press conference|reaction|\bpk\b/i.test(c.title || "")) f.push(["amber", "Maybe not full highlights"]);
+  if (!c.off) f.push(["amber", "Fan channel"]);
+  if (c.dur < 90) f.push(["amber", "Short (" + c.dur + "s)"]);
+  if (c.dur > 600) f.push(["", "Long (" + Math.round(c.dur / 60) + " min)"]);
+  if (c.fmt === "vertical") f.push(["", "Portrait"]);
+  return f;
+}
+async function loadCheck(){
+  setCkStatus("Checking upcoming games… this takes a few seconds.");
+  const [a, b] = ckRange.split("-").map(Number);
+  try {
+    const j = await rpc("clip_check_admin", { p_from: a, p_to: b });
+    ckData = j.fixtures || []; checkLoaded = true;
+    const vidCount = {}, seen = new Set();
+    ckData.forEach(fx => fx.meetings.forEach(m => { if (m.clip && !seen.has(m.mid)) { seen.add(m.mid); vidCount[m.clip.vid] = (vidCount[m.clip.vid] || 0) + 1; } }));
+    ckData.forEach(fx => fx.meetings.forEach(m => { m.flags = ckFlags(m, vidCount); }));
+    const comps = [...new Set(ckData.map(f => f.comp))].sort();
+    const cur = $("#ckComp").value;
+    $("#ckComp").innerHTML = '<option value="">All competitions</option>' + comps.map(c => `<option${c === cur ? " selected" : ""}>${esc(c)}</option>`).join("");
+    setCkStatus("Checked " + new Date(j.checked_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + ".");
+    renderCheck();
+  } catch(e){
+    if (e.pin) { store.set("lmr_review_pin", null); return showPin(e.message); }
+    setCkStatus("Couldn't run the check: " + e.message, true);
+  }
+}
+const ckBad = m => m.clip && m.flags.some(([l]) => l === "red" || l === "amber");
+function ckActions(m){
+  if (!m.clip) return "<span></span>";
+  return `<div class="ckact"><a class="small primary" href="${esc(ckWatch(m.clip))}" target="_blank" rel="noopener">Watch</a>
+    ${m.clip.dbid ? `<select data-takeoff="${m.clip.dbid}" aria-label="Take off this clip"><option value="">Take off…</option><option>Bad clip</option><option>Wrong match</option></select>` : ""}</div>`;
+}
+function ckFlagHtml(fl){ return fl.map(([l, t]) => `<span class="flag ${l}">${esc(t)}</span>`).join(""); }
+function ckMeeting(m){
+  const res = `${esc(m.home)} ${esc(m.score)} ${esc(m.away)}`;
+  const when = `<div class="when"><span>${ckDate(m.date)}</span><span>${esc(m.comp)}</span></div>`;
+  if (!m.clip) return `<div class="ckm gap">${when}<div class="body"><span class="res">${res}</span><span class="ttl">No clip that plays in the UK yet</span>
+    ${m.flags.length ? `<div class="meta">${ckFlagHtml(m.flags)}</div>` : ""}</div><span></span></div>`;
+  const c = m.clip;
+  const tags = (c.off ? `<span class="flag ok">Official</span>` : "") + (c.auto ? `<span class="flag">Auto</span>` : "") +
+    (m.n > 1 ? `<span class="flag">${m.n - 1} backup${m.n > 2 ? "s" : ""}</span>` : "") + ckFlagHtml(m.flags);
+  return `<div class="ckm">${when}<div class="body"><span class="res">${res}</span><span class="ttl">${esc(c.title)}</span>
+    <span class="src">${esc(c.ch)} · ${dur(c.dur)} · ${c.src === "facebook" ? "Facebook" : "YouTube"}${c.dbid ? " · id " + c.dbid : ""}</span>
+    <div class="meta">${tags}</div></div>${ckActions(m)}</div>`;
+}
+function renderCheck(){
+  const comp = $("#ckComp").value, q = $("#ckQ").value.trim().toLowerCase();
+  // Summary over unique meetings.
+  const uniq = new Map(); ckData.forEach(f => f.meetings.forEach(m => uniq.set(m.mid, m)));
+  const all = [...uniq.values()], withClip = all.filter(m => m.clip), off = withClip.filter(m => m.clip.off), bad = withClip.filter(ckBad);
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+  const kpi = (n, l) => `<div class="kpi"><b>${n}</b><span>${l}</span></div>`;
+  const byComp = {};
+  ckData.forEach(f => { const c = byComp[f.comp] ||= { fx: 0, n: 0, clip: 0, full: 0 }; c.fx++; c.n += f.meetings.length;
+    const k = f.meetings.filter(m => m.clip).length; c.clip += k; if (f.meetings.length && k === f.meetings.length) c.full++; });
+  const rows = Object.entries(byComp).sort((a, b) => b[1].fx - a[1].fx || a[0].localeCompare(b[0]));
+  const issues = bad.slice().sort((a, b) => (b.flags.some(([l]) => l === "red") - a.flags.some(([l]) => l === "red")) || b.date.localeCompare(a.date));
+  const list = ckData.filter(f => {
+    if (comp && f.comp !== comp) return false;
+    if (q && !(f.home + " " + f.away).toLowerCase().includes(q)) return false;
+    if (ckShow === "gaps" && !(f.meetings.length < 5 || f.meetings.some(m => !m.clip))) return false;
+    if (ckShow === "flags" && !f.meetings.some(m => m.flags.some(([l]) => l === "red" || l === "amber"))) return false;
+    return true;
+  });
+  $("#ckCount").textContent = `${list.length} of ${ckData.length} fixtures`;
+  const days = {}; list.forEach(f => (days[f.ko.slice(0, 10)] ||= []).push(f));
+  $("#ckBody").innerHTML = `
+    <div class="kpis">${kpi(ckData.length, "Fixtures checked")}${kpi(pct(withClip.length, all.length) + "%", `Meetings with a clip (${withClip.length} of ${all.length})`)}
+      ${kpi(pct(off.length, withClip.length) + "%", "Clips from official accounts")}${kpi(bad.length, "Clips worth a second look")}</div>
+    <div class="stcard cksec"><h3>Coverage by competition</h3><p class="sub">Share of meetings with a clip that plays in the UK</p>
+      <div class="ckwrap"><table class="sttable"><tr><th>Competition</th><th class="n">Fixtures</th><th class="n">All 5 clips</th><th class="n">Meetings with a clip</th><th style="width:30%"></th></tr>
+      ${rows.map(([n, c]) => `<tr><td>${esc(n)}</td><td class="n">${c.fx}</td><td class="n">${c.full}</td><td class="n">${c.clip} of ${c.n} · ${pct(c.clip, c.n)}%</td><td><div class="cktrack"><i style="width:${pct(c.clip, c.n)}%"></i></div></td></tr>`).join("")}</table></div></div>
+    <div class="stcard cksec" style="padding:0"><div style="padding:14px 14px 4px"><h3>Worth a second look</h3><p class="sub">Live clips that may not be right. Red means probably wrong.</p></div>
+      ${issues.length ? issues.map(m => `<div class="ckissue"><div class="body" style="display:flex;flex-direction:column;gap:4px;min-width:0">
+        <span class="res" style="font-weight:600;font-size:14px">${esc(m.home)} ${esc(m.score)} ${esc(m.away)} <span class="t">· ${esc(m.comp)} · ${ckDate(m.date)}</span></span>
+        <span class="t">${esc(m.clip.title)} · ${esc(m.clip.ch)} · ${dur(m.clip.dur)}${m.clip.dbid ? " · id " + m.clip.dbid : ""}</span>
+        <div class="meta">${ckFlagHtml(m.flags.filter(([l]) => l))}</div></div>${ckActions(m)}</div>`).join("") : `<p class="cknote">Nothing to look at. Every live clip passed the checks.</p>`}</div>
+    ${Object.keys(days).sort().map(d => `<div class="ckday">${ckDay(d)}</div>` + days[d].map(f => {
+      const k = f.meetings.filter(m => m.clip).length, n = f.meetings.length;
+      const cls = !n ? "none" : k === n ? "full" : k ? "part" : "none";
+      return `<article class="ckfx"><div class="ckhead"><div><h3>${esc(f.home)} v ${esc(f.away)}</h3><span class="sub">${esc(f.comp)} · ${f.tbc ? "Time TBC" : f.ko.slice(11) + " UK"}</span></div>
+        <span class="ckcov ${cls}">${n ? `${k} of ${n} clips` : "First-ever meeting"}</span></div>
+        ${n ? f.meetings.map(ckMeeting).join("") : `<p class="cknote">These clubs have never met in a competitive game, so fans see the first-ever meeting screen.</p>`}</article>`;
+    }).join("")).join("") || `<p class="cknote">No fixtures match these filters.</p>`}`;
+}
+document.querySelectorAll("[data-range]").forEach(b => b.addEventListener("click", () => {
+  ckRange = b.dataset.range; document.querySelectorAll("[data-range]").forEach(x => x.setAttribute("aria-pressed", x === b)); loadCheck(); }));
+document.querySelectorAll("[data-show]").forEach(b => b.addEventListener("click", () => {
+  ckShow = b.dataset.show; document.querySelectorAll("[data-show]").forEach(x => x.setAttribute("aria-pressed", x === b)); renderCheck(); }));
+$("#ckComp").addEventListener("change", renderCheck);
+$("#ckQ").addEventListener("input", renderCheck);
+$("#ckRefresh").addEventListener("click", () => loadCheck());
+$("#ckBody").addEventListener("change", async e => {
+  const s = e.target.closest("select[data-takeoff]"); if (!s || !s.value) return;
+  const reason = s.value; s.disabled = true;
+  try {
+    const j = await rpc("clip_check_reject", { p_id: Number(s.dataset.takeoff), p_reason: reason });
+    showToastPlain(j.rejected ? "Clip taken off (" + reason.toLowerCase() + "). Refreshing…" : "That clip was already off.");
+    loadCheck();
+  } catch(err){
+    s.disabled = false; s.value = "";
+    if (err.pin) { store.set("lmr_review_pin", null); return showPin(err.message); }
+    setCkStatus("Couldn't take it off: " + err.message, true);
+  }
+});
+function showToastPlain(text){
+  $("#toastText").textContent = text; $("#undo").hidden = true; $("#toast").classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("#toast").classList.remove("show"); $("#undo").hidden = false; }, 3500);
+}
+
+start().then(() => { const t = store.get("lmr_review_tab"); if ((t === "offers" || t === "stats" || t === "check") && !$("#app").hidden) showTab(t); });
 </script>
 </body>
 </html>
