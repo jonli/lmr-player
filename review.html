@@ -234,6 +234,8 @@
   <section id="statsView" hidden>
     <p class="help">Anonymous counts from the app: no names, accounts or device IDs. A "fan" is one phone that opened the app that day (or week, or month). Downloads, uninstalls, ratings and crashes are in Google Play Console. UK dates.</p>
     <div class="bar stbar">
+      <button class="chip" data-hours="1" aria-pressed="false">Last hour</button>
+      <button class="chip" data-hours="24" aria-pressed="false">24 hours</button>
       <button class="chip" data-days="7" aria-pressed="false">7 days</button>
       <button class="chip" data-days="28" aria-pressed="true">28 days</button>
       <button class="chip" data-days="90" aria-pressed="false">90 days</button>
@@ -662,9 +664,11 @@ let statsLoaded = false, statDays = 28;
 const fmtN = n => Number(n || 0).toLocaleString("en-GB");
 const shortDay = d => new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 function setStStatus(msg, isErr){ const el = $("#stStatus"); el.textContent = msg || ""; el.classList.toggle("err", !!isErr); }
-document.querySelectorAll("[data-days]").forEach(b => b.addEventListener("click", () => {
-  statDays = Number(b.dataset.days);
-  document.querySelectorAll("[data-days]").forEach(x => x.setAttribute("aria-pressed", x === b));
+let statHours = null;
+document.querySelectorAll("[data-days],[data-hours]").forEach(b => b.addEventListener("click", () => {
+  if (b.dataset.hours) { statHours = Number(b.dataset.hours); }
+  else { statHours = null; statDays = Number(b.dataset.days); }
+  document.querySelectorAll("[data-days],[data-hours]").forEach(x => x.setAttribute("aria-pressed", x === b));
   loadStats();
 }));
 $("#stRefresh").addEventListener("click", () => loadStats());
@@ -672,7 +676,7 @@ $("#stRefresh").addEventListener("click", () => loadStats());
 async function loadStats(){
   setStStatus("Loading stats…");
   try {
-    const j = await rpc("stats_admin", { p_days: statDays });
+    const j = await rpc("stats_admin", statHours ? { p_hours: statHours } : { p_days: statDays });
     statsLoaded = true; setStStatus(""); renderStats(j);
   } catch(e){
     if (e.pin) { store.set("lmr_review_pin", null); return showPin(e.message); }
@@ -704,17 +708,18 @@ function renderStats(j){
   const offers = (j.offers || []).filter(o => o.taps || o.all_time || o.active);
   $("#stBody").innerHTML = `
     <div class="kpis">
-      ${kpi(today.fans, "Fans today")}${kpi(t.fans_this_week, "Fans in the last 7 days")}${kpi(t.fans_this_month, "Fans in the last 30 days")}
+      ${j.hours ? "" : kpi(today.fans, "Fans today")}${kpi(t.fans_this_week, "Fans in the last 7 days")}${kpi(t.fans_this_month, "Fans in the last 30 days")}
       ${kpi(t.new, "New installs opened")}${kpi(t.opens, "App opens")}${kpi(t.cards, "Match cards viewed")}
       ${kpi(t.caught_up, "Reached “all caught up”")}${kpi(t.taps, "Ad taps")}
       ${kpi(t.reminder_on, "Reminders turned on")}${kpi(t.reminder_off, "Reminders turned off")}
       <div class="kpi"><b>${promptRate}</b><span>Said yes to the reminder prompt (${fmtN(t.prompt_yes)} of ${fmtN(t.prompt_shown)})</span></div>
     </div>
     <div class="stgrid">
+      ${j.hours ? `<p class="sub">Day charts are hidden for the last hour and 24 hours. The counts above cover that window.</p>` : `
       ${barChart(daily, "fans", "Fans per day")}
       ${barChart(daily, "opens", "App opens per day")}
       ${barChart(daily, "new", "New installs per day")}
-      ${barChart(daily, "taps", "Ad taps per day")}
+      ${barChart(daily, "taps", "Ad taps per day")}`}
       ${hBars("Most viewed teams", "Feeds opened per team; first-open picks count too", (j.teams || []).map(x => ({ name: x.name, n: x.views })))}
       ${hBars("How far fans swipe", "Views of each match card (1 = the latest meeting). A big drop shows where fans stop", depth)}
       <div class="stcard"><h3>Ad taps by offer</h3><p class="sub">In this period, and all time</p>
